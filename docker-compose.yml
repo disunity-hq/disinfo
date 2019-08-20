@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+
+  cli:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: always
+    environment:
+      DiscordToken: "NTkwMzk4NjIwMjQ4MDQ3NjI1.XVt6iw.2uRHJcs_sHlEjvBYtFDH5DjWAys"
+      Prefix: "!"
+      DbFilename: "db.lite"
+      Roles: "Moderator,Administrator"

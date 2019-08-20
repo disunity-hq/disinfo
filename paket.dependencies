@@ -1,0 +1,7 @@
+source https://api.nuget.org/v3/index.json
+
+# core dependencies
+nuget Discord.Net >= 2.1.1
+nuget Microsoft.Extensions.Configuration >= 2.2.0
+nuget Microsoft.Extensions.Configuration.EnvironmentVariables >= 2.2.4
+nuget LiteDB >= 4.1.4
