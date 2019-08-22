@@ -5,10 +5,13 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using Disunity.Disinfo.Modules;
 using Disunity.Disinfo.Services;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
+using Slugify;
 
 using CommandService = Disunity.Disinfo.Services.CommandService;
 
@@ -46,7 +49,15 @@ namespace Disunity.Disinfo {
                     .AddSingleton<StartupService>()
                     .AddSingleton<LoggingService>()
                     .AddSingleton(Configuration)
-                    .AddTransient<DbService>();
+                    .AddSingleton<DbService>()
+                    .AddSingleton<FactService>()
+                    .AddSingleton(new SlugHelper(
+                                      new SlugHelper.Config() {
+                                          CollapseDashes = true,
+                                          CollapseWhiteSpace = true,
+                                          ForceLowerCase = true
+                                      }))
+                    .AddTransient<LearnModule>();
         }
 
     }

@@ -5,3 +5,5 @@ nuget Discord.Net >= 2.1.1
 nuget Microsoft.Extensions.Configuration >= 2.2.0
 nuget Microsoft.Extensions.Configuration.EnvironmentVariables >= 2.2.4
 nuget LiteDB >= 4.1.4
+nuget Slugify.Core >= 2.3.0
+nuget SharpYaml >= 1.6.5

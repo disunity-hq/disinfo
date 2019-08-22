@@ -1,23 +1,20 @@
 
 using System;
 
+using Disunity.Disinfo.Interfaces;
+
 using LiteDB;
 
 using Microsoft.Extensions.Configuration;
 
 
 namespace Disunity.Disinfo.Services {
-
-    public interface ITable {
-
-        string Id { get; set; }
-
-    }
+    
 
     public class DbService {
 
         private readonly IConfigurationRoot _config;
-        private string _filename;
+        private readonly string _filename;
 
         public DbService(IConfigurationRoot config) {
             _config = config;
@@ -30,8 +27,9 @@ namespace Disunity.Disinfo.Services {
             }
         }
 
-        public void WithTable<T>(string name, Action<LiteCollection<T>> handler) where T: ITable {
+        public void WithTable<T>(Action<LiteCollection<T>> handler) where T: ITable {
             WithDb(db => {
+                var name = typeof(T).Name;
                 var table = db.GetCollection<T>(name);
                 handler(table);
                 table.EnsureIndex(o => o.Id);
