@@ -18,11 +18,11 @@ namespace Disunity.Disinfo {
                                 .Build();
 
             var services = new ServiceCollection();
-            new Startup(configuration).ConfigureServices(services);
+            new Startup.Startup(configuration).ConfigureServices(services);
 
             var provider = services.BuildServiceProvider(); // Build the service provider
             provider.GetRequiredService<LoggingService>(); // Start the logging service
-            provider.GetRequiredService<CommandService>(); // Start the command handler service
+            provider.GetRequiredService<DispatchService>(); // Start the command handler service
 
             await provider.GetRequiredService<StartupService>().StartAsync(); // Start the startup service
             await Task.Delay(-1); // Keep the program alive

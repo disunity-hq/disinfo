@@ -9,25 +9,27 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using Disunity.Disinfo.Startup;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Disunity.Disinfo.Services {
 
-    public class CommandService {
+    public class DispatchService {
 
-        private readonly DiscordSocketClient _discord;
-        private readonly Discord.Commands.CommandService _commands;
+        private readonly SocketClient _discord;
+        private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
         private readonly LoggingService _logger;
         private readonly IServiceProvider _provider;
         private readonly IEnumerable<MethodInfo> _parsers;
 
         // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
-        public CommandService(
-            DiscordSocketClient discord,
-            Discord.Commands.CommandService commands,
+        public DispatchService(
+            SocketClient discord,
+            CommandService commands,
             IConfigurationRoot config,
             LoggingService logger,
             IServiceProvider provider) {
@@ -39,14 +41,6 @@ namespace Disunity.Disinfo.Services {
 
             _discord.MessageReceived += OnMessageReceivedAsync;
             _parsers = FindAllParsers();
-
-            foreach (var parser in _parsers) {
-                Info($"Found [Parser]: {parser.Name}");
-            }
-
-            if (!_parsers.Any()) {
-                Info("Couldn't find any parsers :(");
-            }
         }
 
         private IEnumerable<MethodInfo> FindAllParsers() {
@@ -65,39 +59,42 @@ namespace Disunity.Disinfo.Services {
         private bool ShouldIgnore(SocketUserMessage message) {
 
             if (message.Author.Id == _discord.CurrentUser.Id) {
-                Info("Ignoring self.");
                 return true; // Ignore self when checking commands
             }
 
             if (message.Author.IsBot) {
-                Info("Ignoring bot.");
                 return true; // Ignore other bots
             }
 
-            if (!UserCanInteract(message, (SocketGuildUser) message.Author)) {
-                return true;
-            }
+//            if (!UserCanInteract(message, (SocketGuildUser) message.Author)) {
+//                return true;
+//            }
 
             return false;
         }
 
-        private bool UserCanInteract(SocketUserMessage message, SocketGuildUser user) {
-            var rolesEnv = _config["Roles"] ?? "Administrator";
-            var validRoles = rolesEnv.Split(",").Select(o => o.ToLower()).ToList();
+//        private bool UserCanInteract(SocketUserMessage message, SocketGuildUser user) {
+//            var rolesEnv = _config["Roles"] ?? "Administrator";
+//            var validRoles = rolesEnv.Split(",").Select(o => o.ToLower()).ToList();
+//
+//            return user.Roles
+//                       .Select(r => r.Name)
+//                       .Select(role => role.ToLower())
+//                       .Any(lowercaseRole => validRoles.Contains(lowercaseRole));
+//        }
 
-            return user.Roles
-                       .Select(r => r.Name)
-                       .Select(role => role.ToLower())
-                       .Any(lowercaseRole => validRoles.Contains(lowercaseRole));
-        }
-
-        private async Task<bool> CollectionHandler(SocketCommandContext context, MethodInfo parser,
+        private async Task<bool> CollectionHandler(SocketCommandContext context, 
+                                                   MethodInfo parser,
                                                    ParserAttribute attr,
                                                    Match match) {
-            return false;
+
+            var instance = (ModuleBase<SocketCommandContext>) _provider.GetRequiredService(parser.DeclaringType);
+            return await (Task<bool>) parser.Invoke(instance, new object[] {context, match});
         }
 
-        private async Task<bool> ParameterHandler(SocketCommandContext context, MethodInfo parser, ParserAttribute attr,
+        private async Task<bool> ParameterHandler(SocketCommandContext context, 
+                                                  MethodInfo parser, 
+                                                  ParserAttribute attr,
                                                   Match match) {
             if (match.Groups.Count == 0) {
                 return false;
@@ -134,8 +131,15 @@ namespace Disunity.Disinfo.Services {
             var parameters = parser.GetParameters();
             var match = attr.Pattern.Match(message);
 
-            if (parameters.Length == 2 && parameters[1].ParameterType == typeof(List<string>)) {
-                return await CollectionHandler(context, parser, attr, match);
+            if (!match.Success) {
+                return false;
+            }
+
+            if (parameters.Length == 2 && parameters[1].ParameterType == typeof(Match)) {
+                Console.WriteLine($"Handling message `{message}`");
+                if (await CollectionHandler(context, parser, attr, match)) {
+                    return true;
+                }
             }
 
             return await ParameterHandler(context, parser, attr, match);

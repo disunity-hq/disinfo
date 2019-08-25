@@ -13,9 +13,9 @@ namespace Disunity.Disinfo.Services {
     public class FactService {
 
         private readonly DbService _dbService;
-        private readonly SlugHelper _slugHelper;
+        private readonly ISlugHelper _slugHelper;
 
-        public FactService(DbService dbService, SlugHelper slugHelper) {
+        public FactService(DbService dbService, ISlugHelper slugHelper) {
             _dbService = dbService;
             _slugHelper = slugHelper;
         }
@@ -67,7 +67,7 @@ namespace Disunity.Disinfo.Services {
             Console.WriteLine($"==== Updating: {index} / {key} / {value}");
             index = _slugHelper.GenerateSlug(index);
 
-            if (value.ToLower() == "null") {
+            if (value != null && value.ToLower() == "null") {
                 value = null;
             }
 
@@ -82,7 +82,7 @@ namespace Disunity.Disinfo.Services {
                 fact.Fields = new Dictionary<string, string>();
             }
 
-            var lowerKey = key.ToLower();
+            var lowerKey = key?.ToLower() ?? "description";
 
             if (lowerKey == "description") {
                 fact.Description = value;
@@ -94,12 +94,16 @@ namespace Disunity.Disinfo.Services {
                 fact.Url = value;
             } else if (lowerKey == "thumbnail") {
                 fact.ThumbnailUrl = value;
-            } else if (value != null) {
+            } else if (lowerKey == "image") {
+                fact.ImageUrl = value;
+            } else if (lowerKey == "locked") {
+                fact.Locked = value?.ToLower() == "true";
+            }else if (value != null) {
                 fact.Fields[lowerKey] = value;
             } else if (fact.Fields.ContainsKey(key)) {
                 fact.Fields.Remove(key);
             }
-
+            
             _dbService.WithTable<Fact>(t => t.Update(fact));
 
             return fact;

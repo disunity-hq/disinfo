@@ -25,7 +25,9 @@ namespace Disunity.Disinfo {
 
         public string ThumbnailUrl { get; set; }
 
-        public Dictionary<string, string> Fields { get; set; }
+        public bool Locked { get; set; }
+
+        public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
 
         public Color DiscordColor {
             get {
@@ -65,8 +67,24 @@ namespace Disunity.Disinfo {
                                        .ToList();
             }
 
+            if (Locked) {
+                var footer = new EmbedFooterBuilder()
+                             .WithText("*Locked*")
+                             .WithIconUrl("https://cdn0.iconfinder.com/data/icons/mono2/100/lock-512.png");
+
+                builder.WithFooter(footer);
+            }
+
             return builder.Build();
         }
+
+        public bool IsEmpty =>
+            string.IsNullOrEmpty(Description) &&
+            string.IsNullOrEmpty(Author) &&
+            string.IsNullOrEmpty(Url) &&
+            string.IsNullOrEmpty(ImageUrl) &&
+            string.IsNullOrEmpty(ThumbnailUrl) &&
+            (Fields == null || Fields.Count == 0);
 
     }
 

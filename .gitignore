@@ -10,11 +10,5 @@ paket-files/
 **/bin/
 **/out/
 **/publish/
-ExampleMod/Assets/Disunity/*.dll
-ExampleMod/Assets/Disunity/Dependencies/*.dll
-ExampleMod/Assets/Disunity/*.meta
-ExampleMod/Assets/Disunity/Dependencies/*.meta
-ExampleMod/Assets/Disunity/Editor/
-Release/
 **/nupkg/
-DiscoBalls
+**/*.db

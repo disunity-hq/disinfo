@@ -5,19 +5,21 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
+using Disunity.Disinfo.Startup;
+
 
 namespace Disunity.Disinfo.Services {
 
     public class LoggingService {
 
-        private readonly DiscordSocketClient _discord;
+        private readonly SocketClient _discord;
         private readonly Discord.Commands.CommandService _commands;
 
         private string _logDirectory { get; }
         private string _logFile => Path.Combine(_logDirectory, $"{DateTime.UtcNow.ToString("yyyy-MM-dd")}.txt");
 
         // DiscordSocketClient and CommandService are injected automatically from the IServiceProvider
-        public LoggingService(DiscordSocketClient discord, Discord.Commands.CommandService commands) {
+        public LoggingService(SocketClient discord, Discord.Commands.CommandService commands) {
             _logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
 
             _discord = discord;

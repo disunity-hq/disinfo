@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
+using Disunity.Disinfo.Startup;
+
 using Microsoft.Extensions.Configuration;
 
 
@@ -13,14 +15,14 @@ namespace Disunity.Disinfo.Services {
     public class StartupService {
 
         private readonly IServiceProvider _provider;
-        private readonly DiscordSocketClient _discord;
+        private readonly SocketClient _discord;
         private readonly Discord.Commands.CommandService _commands;
         private readonly IConfigurationRoot _config;
 
         // DiscordSocketClient, CommandService, and IConfigurationRoot are injected automatically from the IServiceProvider
         public StartupService(
             IServiceProvider provider,
-            DiscordSocketClient discord,
+            SocketClient discord,
             Discord.Commands.CommandService commands,
             IConfigurationRoot config) {
             _provider = provider;
