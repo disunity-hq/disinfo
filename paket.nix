@@ -6,10 +6,10 @@ stdenv.mkDerivation {
 
   # fixed-output derivation (hash must predetermined)
   outputHashAlgo = "sha256";
-  outputHash = "07a76zqvgk8aggcws3syni5hxrcrargxlxrqjmxgcd3hmyblmfjl";
+  outputHash = "158h6kl96vj4gi7wigl2xfpiqq2w3zayicdacrij9313dzpfn7pm";
   outputHashMode = "recursive";
 
-  buildInputs = [ mono dotnet-sdk cacert ];
+  buildInputs = [ mono dotnet-sdk cacert git ];
 
   buildPhase = ''
     export HOME=$NIX_BUILD_TOP
