@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using BindingAttributes;
+
 using Disunity.Disinfo.Interfaces;
 
 using Slugify;
@@ -10,6 +12,7 @@ using Slugify;
 
 namespace Disunity.Disinfo.Services {
 
+    [AsSingleton]
     public class FactService {
 
         private readonly DbService _dbService;

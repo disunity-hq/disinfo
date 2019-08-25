@@ -1,15 +1,12 @@
-using System;
-using System.Threading.Tasks;
+using BindingAttributes;
 
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-using Disunity.Disinfo.Modules;
-using Disunity.Disinfo.Services;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using Slugify;
 
@@ -25,21 +22,19 @@ namespace Disunity.Disinfo.Startup {
         }
 
         public void ConfigureServices(IServiceCollection services) {
+            BindingAttribute.ConfigureBindings(services, null);
+            FactoryAttribute.ConfigureFactories(services, null);
+
             services
+                .AddLogging(builder => builder.AddConsole())
                 .AddSingleton(Configuration)
-                .AddSingleton<SlugHelperConfig>()
                 .AddSingleton<ISlugHelper, SlugHelper>()
-                .AddSingleton<CommandServiceConfig>()
                 .AddSingleton<CommandService>()
-                .AddSingleton<SocketConfig>()
-                .AddSingleton<SocketClient>()
-                .AddSingleton<LoggingService>()
-                .AddSingleton<StartupService>()
-                .AddSingleton<DispatchService>()
-                .AddSingleton<DbService>()
-                .AddSingleton<FactService>()
-                .AddSingleton<RoleService>()
-                .AddTransient<LearnModule>();
+                .AddSingleton(new DiscordSocketConfig {
+                    LogLevel = LogSeverity.Verbose,
+                    MessageCacheSize = 1000,
+                })
+                .AddSingleton<DiscordSocketClient>();
         }
 
     }

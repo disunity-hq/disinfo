@@ -1,6 +1,8 @@
 
 using System;
 
+using BindingAttributes;
+
 using Disunity.Disinfo.Interfaces;
 
 using LiteDB;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 namespace Disunity.Disinfo.Services {
     
 
+    [AsSingleton]
     public class DbService {
 
         private readonly IConfigurationRoot _config;

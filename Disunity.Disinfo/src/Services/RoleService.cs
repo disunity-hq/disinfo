@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 
+using BindingAttributes;
+
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -10,11 +12,12 @@ using Disunity.Disinfo.Startup;
 
 namespace Disunity.Disinfo.Services {
 
+    [AsSingleton]
     public class RoleService {
 
-        private readonly SocketClient _discord;
+        private readonly DiscordSocketClient _discord;
 
-        public RoleService(SocketClient discord) {
+        public RoleService(DiscordSocketClient discord) {
             _discord = discord;
         }
 

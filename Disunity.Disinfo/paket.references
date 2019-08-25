@@ -1,6 +1,10 @@
 Discord.Net
+Microsoft.Extensions.Logging
+Microsoft.Extensions.Logging.Console
 Microsoft.Extensions.Configuration
 Microsoft.Extensions.Configuration.EnvironmentVariables
 LiteDB
 Slugify.Core
 SharpYaml
+
+BindingAttributes

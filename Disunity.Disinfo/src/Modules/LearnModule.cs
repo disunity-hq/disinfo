@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using BindingAttributes;
+
 using Discord;
 using Discord.Commands;
 
@@ -35,6 +37,7 @@ namespace Disunity.Disinfo.Modules {
 
     }
 
+    [AsSingleton]
     public class LearnModule : ModuleBase<SocketCommandContext> {
 
         private readonly FactService _facts;

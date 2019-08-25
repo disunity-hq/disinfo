@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using BindingAttributes;
+
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -13,25 +15,27 @@ using Disunity.Disinfo.Startup;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 
 namespace Disunity.Disinfo.Services {
 
+    [AsSingleton]
     public class DispatchService {
 
-        private readonly SocketClient _discord;
+        private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
-        private readonly LoggingService _logger;
+        private readonly ILogger<DispatchService> _logger;
         private readonly IServiceProvider _provider;
         private readonly IEnumerable<MethodInfo> _parsers;
 
         // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
         public DispatchService(
-            SocketClient discord,
+            DiscordSocketClient discord,
             CommandService commands,
             IConfigurationRoot config,
-            LoggingService logger,
+            ILogger<DispatchService> logger,
             IServiceProvider provider) {
             _discord = discord;
             _commands = commands;
@@ -53,7 +57,7 @@ namespace Disunity.Disinfo.Services {
         }
 
         private void Info(string message) {
-            _logger.OnLogAsync(new LogMessage(LogSeverity.Info, "CommandService", message));
+            _logger.LogInformation(message);
         }
 
         private bool ShouldIgnore(SocketUserMessage message) {
