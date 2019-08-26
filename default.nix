@@ -1,19 +1,23 @@
 with import <nixpkgs> {};
 
 let
-  paket-deps = import ./paket.nix;
   disinfo = stdenv.mkDerivation {
     name = "disinfo";
     src = ./.;
 
-    buildInputs = [ mono dotnet-sdk paket-deps ];
+        # fixed-output derivation (hash must predetermined)
+    outputHashAlgo = "sha256";
+    outputHash = "0b90afk0p6bcir8vpjdapqlxqyqd3065zwxgqsw5m7grki3qacsh";
+    outputHashMode = "recursive";
+
+    buildInputs = [ cacert git mono dotnet-sdk ];
 
     buildPhase = ''
       export HOME=$NIX_BUILD_TOP
-      export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
-      cp -r ${paket-deps}/.nuget $HOME
-      cp -r ${paket-deps}/* ./
-      ${dotnet-sdk}/bin/dotnet publish --no-dependencies --no-restore Disunity.Disinfo
+      export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true      
+      export SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-bundle.crt";
+      ${mono}/bin/mono .paket/paket.exe install
+      ${dotnet-sdk}/bin/dotnet publish Disunity.Disinfo
     '';
 
     installPhase = ''
