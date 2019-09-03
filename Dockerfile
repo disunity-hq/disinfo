@@ -31,4 +31,5 @@ RUN dotnet publish -p:SolutionDir=$(pwd) -c Release -o out Disunity.Disinfo.cspr
 FROM mcr.microsoft.com/dotnet/core/runtime:2.2 as runtime
 WORKDIR /app
 COPY --from=build /app/Disunity.Disinfo/out ./
+RUN mkdir /db
 ENTRYPOINT ["dotnet", "Disunity.Disinfo.dll"]

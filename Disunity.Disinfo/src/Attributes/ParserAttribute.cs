@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 
 
-namespace Disunity.Disinfo {
+namespace Disunity.Disinfo.Attributes {
 
     [AttributeUsage(AttributeTargets.Method)]
     public class ParserAttribute : Attribute {

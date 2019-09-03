@@ -3,8 +3,10 @@ Microsoft.Extensions.Logging
 Microsoft.Extensions.Logging.Console
 Microsoft.Extensions.Configuration
 Microsoft.Extensions.Configuration.EnvironmentVariables
+Microsoft.Extensions.Options.DataAnnotations
 LiteDB
 Slugify.Core
 SharpYaml
+
 
 BindingAttributes

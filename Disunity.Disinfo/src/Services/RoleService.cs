@@ -7,12 +7,10 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-using Disunity.Disinfo.Startup;
-
 
 namespace Disunity.Disinfo.Services {
 
-    [AsSingleton]
+    [AsScoped]
     public class RoleService {
 
         private readonly DiscordSocketClient _discord;

@@ -6,7 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 
-namespace Disunity.Disinfo {
+namespace Disunity.Disinfo.Attributes {
 
     [AttributeUsage(AttributeTargets.Method)]
     public class RolesAboveMeAttribute : PreconditionAttribute {

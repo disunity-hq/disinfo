@@ -8,9 +8,9 @@ using Discord;
 using Disunity.Disinfo.Interfaces;
 
 
-namespace Disunity.Disinfo {
+namespace Disunity.Disinfo.Models {
 
-    public class Fact : ITable {
+    public class Embed : ITable {
 
         public string Id { get; set; }
         public string Description { get; set; }
@@ -50,7 +50,7 @@ namespace Disunity.Disinfo {
             }
         }
 
-        public Embed AsEmbed() {
+        public Discord.Embed AsEmbed() {
             var builder = new EmbedBuilder().WithTitle(Id)
                                             .WithDescription(Description)
                                             .WithAuthor(Author)

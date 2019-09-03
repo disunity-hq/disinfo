@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 using BindingAttributes;
 
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-using Disunity.Disinfo.Startup;
+using Disunity.Disinfo.Attributes;
+using Disunity.Disinfo.Options;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 
 namespace Disunity.Disinfo.Services {
@@ -24,26 +24,26 @@ namespace Disunity.Disinfo.Services {
     public class DispatchService {
 
         private readonly DiscordSocketClient _discord;
-        private readonly CommandService _commands;
-        private readonly IConfigurationRoot _config;
+        private readonly LoggingService<CommandService> _logService;
+        private readonly DispatchServiceOptions _options;
         private readonly ILogger<DispatchService> _logger;
         private readonly IServiceProvider _provider;
         private readonly IEnumerable<MethodInfo> _parsers;
 
-        // DiscordSocketClient, CommandService, IConfigurationRoot, and IServiceProvider are injected automatically from the IServiceProvider
+
         public DispatchService(
-            DiscordSocketClient discord,
-            CommandService commands,
-            IConfigurationRoot config,
+            LoggingService<CommandService> logService,
+            IOptions<DispatchServiceOptions> options,
             ILogger<DispatchService> logger,
-            IServiceProvider provider) {
-            _discord = discord;
-            _commands = commands;
-            _config = config;
+            IServiceProvider provider,
+            DiscordSocketClient socketClient
+            ) {
+            _logService = logService;
+            _options = options.Value;
             _logger = logger;
             _provider = provider;
+            _discord = socketClient;
 
-            _discord.MessageReceived += OnMessageReceivedAsync;
             _parsers = FindAllParsers();
         }
 
@@ -54,10 +54,6 @@ namespace Disunity.Disinfo.Services {
                            .Where(m => m.GetCustomAttributes(typeof(ParserAttribute), false).Length > 0)
                            .Where(m => m.ReturnType == typeof(Task<bool>))
                            .ToArray();
-        }
-
-        private void Info(string message) {
-            _logger.LogInformation(message);
         }
 
         private bool ShouldIgnore(SocketUserMessage message) {
@@ -87,18 +83,16 @@ namespace Disunity.Disinfo.Services {
 //                       .Any(lowercaseRole => validRoles.Contains(lowercaseRole));
 //        }
 
-        private async Task<bool> CollectionHandler(SocketCommandContext context, 
+        private async Task<bool> CollectionHandler(IServiceProvider provider,
                                                    MethodInfo parser,
-                                                   ParserAttribute attr,
                                                    Match match) {
 
-            var instance = (ModuleBase<SocketCommandContext>) _provider.GetRequiredService(parser.DeclaringType);
-            return await (Task<bool>) parser.Invoke(instance, new object[] {context, match});
+            var instance = (ModuleBase<SocketCommandContext>) provider.GetRequiredService(parser.DeclaringType);
+            return await (Task<bool>) parser.Invoke(instance, new object[] {match});
         }
 
-        private async Task<bool> ParameterHandler(SocketCommandContext context, 
+        private async Task<bool> ParameterHandler(IServiceProvider provider,
                                                   MethodInfo parser, 
-                                                  ParserAttribute attr,
                                                   Match match) {
             if (match.Groups.Count == 0) {
                 return false;
@@ -106,16 +100,16 @@ namespace Disunity.Disinfo.Services {
 
             var parameters = parser.GetParameters();
 
-            if (match.Groups.Count != parameters.Length) {
+            if (match.Groups.Count - 1 != parameters.Length) {
                 return false;
             }
 
-            var instance = (ModuleBase<SocketCommandContext>) _provider.GetRequiredService(parser.DeclaringType);
+            var instance = (ModuleBase<SocketCommandContext>) provider.GetRequiredService(parser.DeclaringType);
 
             object[] args;
 
             if (match.Groups.Count == 1) {
-                args = new object[] {context, match.Groups[0].Value};
+                args = new object[] {match.Groups[0].Value};
             } else {
                 var objects = match.Groups.Skip(1)
                                    .Select(g => g.Value)
@@ -123,14 +117,13 @@ namespace Disunity.Disinfo.Services {
                                    .Cast<object>()
                                    .ToList();
 
-                objects.Insert(0, context);
                 args = objects.ToArray();
             }
 
             return await (Task<bool>) parser.Invoke(instance, args);
         }
 
-        private async Task<bool> ProcessParser(SocketCommandContext context, MethodInfo parser, string message) {
+        private async Task<bool> ProcessParser(IServiceProvider provider, MethodInfo parser, string message) {
             var attr = parser.GetCustomAttribute<ParserAttribute>();
             var parameters = parser.GetParameters();
             var match = attr.Pattern.Match(message);
@@ -139,19 +132,19 @@ namespace Disunity.Disinfo.Services {
                 return false;
             }
 
-            if (parameters.Length == 2 && parameters[1].ParameterType == typeof(Match)) {
+            if (parameters.Length == 1 && parameters[0].ParameterType == typeof(Match)) {
                 Console.WriteLine($"Handling message `{message}`");
-                if (await CollectionHandler(context, parser, attr, match)) {
+                if (await CollectionHandler(provider, parser, match)) {
                     return true;
                 }
             }
 
-            return await ParameterHandler(context, parser, attr, match);
+            return await ParameterHandler(provider, parser, match);
         }
 
-        private async Task<bool> ProcessParsers(SocketCommandContext context, string message) {
+        private async Task<bool> ProcessParsers(IServiceProvider provider, string message) {
             foreach (var parser in _parsers) {
-                if (await ProcessParser(context, parser, message)) {
+                if (await ProcessParser(provider, parser, message)) {
                     return true;
                 }
             }
@@ -159,7 +152,9 @@ namespace Disunity.Disinfo.Services {
             return false;
         }
 
-        private async Task OnMessageReceivedAsync(SocketMessage s) {
+        public async Task OnMessageReceivedAsync(SocketMessage s) {
+            _logger.LogInformation("Message received...");
+
             var msg = s as SocketUserMessage; // Ensure the message is from a user/bot
 
             if (msg == null) {
@@ -172,21 +167,37 @@ namespace Disunity.Disinfo.Services {
 
             var argPos = 0; // Check if the message has a valid command prefix
             var context = new SocketCommandContext(_discord, msg); // Create the command context
+ 
+            using (var scope = _provider.CreateScope()) {
+                var provider = scope.ServiceProvider;
 
-            if (msg.HasStringPrefix(_config["Prefix"], ref argPos) ||
-                msg.HasMentionPrefix(_discord.CurrentUser, ref argPos)) {
-                var message = msg.Content.Substring(argPos);
+                // Load commands and modules into the command service
+                var commandService = provider.GetRequiredService<CommandService>();
+                commandService.Log += _logService.LogMessage;
 
-                if (await ProcessParsers(context, message)) {
-                    return;
+                var contextService = provider.GetRequiredService<ContextService>();
+                contextService.Context = context;
+                
+                
+                await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
+                
+                if (msg.HasStringPrefix(_options.Prefix, ref argPos) ||
+                    msg.HasMentionPrefix(_discord.CurrentUser, ref argPos)) {
+                    var message = msg.Content.Substring(argPos);
+
+                    if (await ProcessParsers(provider, message)) {
+                        return;
+                    }
+
+                    var result = await commandService.ExecuteAsync(context, argPos, _provider); // Execute the command
+
+                    if (!result.IsSuccess) {
+                        await context.Channel.SendMessageAsync(result.ToString());
+                    }
                 }
-
-                var result = await _commands.ExecuteAsync(context, argPos, _provider); // Execute the command
-
-                if (!result.IsSuccess) {
-                    await context.Channel.SendMessageAsync(result.ToString());
-                }
+                
             }
+
         }
 
     }

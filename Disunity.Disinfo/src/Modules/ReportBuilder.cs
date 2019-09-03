@@ -88,27 +88,27 @@ namespace Disunity.Disinfo.Modules {
             return SingleCreated() ?? SingleUpdate();
         }
 
-        private Embed SingleEmbed() {
-            return SingleRef()?.Fact?.AsEmbed();
+        private Discord.Embed SingleEmbed() {
+            return SingleRef()?.Embed?.AsEmbed();
         }
 
-        private Embed ReportEmbed() {
+        private Discord.Embed ReportEmbed() {
             var fields = new List<EmbedFieldBuilder>();
 
             if (_createdRefs?.Any() ?? false) {
-                fields.Add(ListField("I created", _createdRefs.Select(r => r.Fact.Id)));
+                fields.Add(ListField("I created", _createdRefs.Select(r => r.Embed.Id)));
             }
 
             if (_deletedRefs?.Any() ?? false) {
-                fields.Add(ListField("I deleted", _deletedRefs.Select(r => r.Fact.Id)));
+                fields.Add(ListField("I deleted", _deletedRefs.Select(r => r.Embed.Id)));
             }
 
             if (_updatedRefs?.Any() ?? false) {
-                fields.Add(ListField("I updated", _updatedRefs.Select(r => r.Fact.Id)));
+                fields.Add(ListField("I updated", _updatedRefs.Select(r => r.Embed.Id)));
             }
 
             if (_lockedRefs?.Any() ?? false) {
-                fields.Add(ListField("These are locked", _lockedRefs.Select(r => r.Fact.Id)));
+                fields.Add(ListField("These are locked", _lockedRefs.Select(r => r.Embed.Id)));
             }
 
             if (_missingRefs?.Any() ?? false) {
@@ -123,7 +123,7 @@ namespace Disunity.Disinfo.Modules {
 
         }
 
-        public Embed Build() {
+        public Discord.Embed Build() {
             return SingleEmbed() ?? ReportEmbed();
         }
 

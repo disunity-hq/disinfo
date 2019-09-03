@@ -8,7 +8,10 @@ services:
       dockerfile: ./Dockerfile
     restart: always
     environment:
-      DiscordToken: ${DiscordToken}
-      Prefix: "!"
-      DbFilename: "db.lite"
-      Roles: "Moderator,Administrator"
+      Discord__Token: ${DiscordToken}
+      Db__Path: "/db"
+    volumes:
+      - type: bind
+        source: ${DbPath:-./dbs}
+        target: /db
+    

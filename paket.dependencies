@@ -6,6 +6,7 @@ nuget Microsoft.Extensions.Logging >= 2.2.0
 nuget Microsoft.Extensions.Logging.Console >= 2.2.0
 nuget Microsoft.Extensions.Configuration >= 2.2.0
 nuget Microsoft.Extensions.Configuration.EnvironmentVariables >= 2.2.4
+nuget Microsoft.Extensions.Options.DataAnnotations >= 2.2.0
 nuget LiteDB >= 4.1.4
 nuget Slugify.Core >= 2.3.0
 nuget SharpYaml >= 1.6.5
@@ -15,6 +16,7 @@ nuget xunit.runner.visualstudio" >= 2.4.0
 nuget Xunit.DependencyInjection >= 5.4.0
 nuget Moq >= 4.12.0
 
+
 git https://github.com/dustinlacewell/BindingAttributes.git master build: "build.sh", OS: mono, Packages: /BindingAttributes/nupkg
 git https://github.com/dustinlacewell/BindingAttributes.git master build: "build.bat", OS: windows, Packages: /BindingAttributes/nupkg
-nuget BindingAttributes
+nuget BindingAttributes >= 0.1.0

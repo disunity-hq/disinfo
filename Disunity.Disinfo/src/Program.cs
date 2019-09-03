@@ -1,13 +1,23 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
-using Discord;
+using BindingAttributes;
 
+using Discord.Commands;
+using Discord.WebSocket;
+
+using Disunity.Disinfo.Interfaces;
+using Disunity.Disinfo.Options;
 using Disunity.Disinfo.Services;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+using Slugify;
 
 
 namespace Disunity.Disinfo {
@@ -16,30 +26,86 @@ namespace Disunity.Disinfo {
 
         public static Task Main(string[] args) => RunAsync(args);
 
+        private static IConfigurationRoot BuildConfiguration() {
+            Console.WriteLine("Building configuration...");
+
+            return new ConfigurationBuilder()
+                   .AddEnvironmentVariables()
+                   .Build();
+        }
+
+        private static IServiceProvider BuildServiceProvider(IConfigurationRoot configuration) {
+            Console.WriteLine("Building service provider...");
+            var services = new ServiceCollection();
+            BindServices(services, configuration);
+            return services.BuildServiceProvider();
+        }
+
+        private static void BindServices(IServiceCollection services, IConfigurationRoot configuration) {
+            Console.WriteLine("Binding services...");
+
+            OptionsAttribute.ConfigureOptions(services, configuration);
+            BindingAttribute.ConfigureBindings(services);
+            FactoryAttribute.ConfigureFactories(services);
+
+            var serviceNames = services.Where(d => d.ServiceType == typeof(ContextService));
+
+            foreach (var desc in serviceNames) {
+                Console.WriteLine($"{desc.ServiceType} => {desc.ImplementationType ?? desc.ImplementationFactory ?? desc.ImplementationInstance} as {desc.Lifetime}");
+            }
+
+            services // bind third-party services (can't add binding attributes to classes we don't control)
+                .AddLogging(builder => builder.AddConsole())
+                .AddSingleton(configuration)
+                .AddSingleton<ISlugHelper, SlugHelper>()
+                .AddSingleton<CommandService>();
+        }
+
+        private static async Task Boot(IServiceProvider provider) {
+            BootAllOptions(provider);
+            var bootService = provider.GetRequiredService<IBootService>();
+            bootService.Boot();
+        }
+
+        public static void HandleOptionsValidationException(OptionsValidationException e) {
+            Console.WriteLine("A configuration error has occured:");
+
+            foreach (var error in e.Failures) {
+                Console.WriteLine(error);
+            }
+        }
+
+        private static void BootAllOptions(IServiceProvider provider) {
+            foreach(var type in Assembly.GetCallingAssembly().GetTypes()) {
+                var attr = type.GetCustomAttribute<OptionsAttribute>();
+
+                if (attr != null) {
+                    Console.WriteLine($"Loading options: {type}");
+                    var optionsInterface = typeof(IOptions<>);
+                    var optionsType = optionsInterface.MakeGenericType(type);
+                    provider.GetRequiredService(optionsType);
+                }
+            }
+        }
+
         public static async Task RunAsync(string[] args) {
             Console.WriteLine("Disinfo starting up...");
 
             try {
-                Console.WriteLine("-- Building configuration");
-                var configuration = new ConfigurationBuilder()
-                                    .AddEnvironmentVariables()
-                                    .Build();
-
-                var services = new ServiceCollection();
-                new Startup.Startup(configuration).ConfigureServices(services);
-                Console.WriteLine("-- Configuring services");
-                var provider = services.BuildServiceProvider(); // Build the service provider
-                var logger = provider.GetRequiredService<ILogger<Program>>(); // Start the logging service
-                logger.LogInformation("-- Logging initialized");
-                provider.GetRequiredService<DispatchService>(); // Start the command handler service
-                logger.LogInformation("-- Dispatch service started");
-                logger.LogInformation("Booting client...");
-                await provider.GetRequiredService<StartupService>().StartAsync(); // Start the startup service
+                var configuration = BuildConfiguration();
+                var provider = BuildServiceProvider(configuration);
+                await Boot(provider);
                 await Task.Delay(-1); // Keep the program alive
             }
-            catch (Exception e) {
-                Console.WriteLine("A fatal exception has ocurred.");
-                Console.WriteLine(e.Message);
+            catch (OptionsValidationException e) {
+                HandleOptionsValidationException(e);
+            }
+            catch (TargetInvocationException e) {
+                if (e.InnerException != null) {
+                    if (e.InnerException is OptionsValidationException optionsError) {
+                        HandleOptionsValidationException(optionsError);
+                    }
+                }
             }
         }
 

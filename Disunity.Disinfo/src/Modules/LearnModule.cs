@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -11,36 +10,34 @@ using BindingAttributes;
 using Discord;
 using Discord.Commands;
 
+using Disunity.Disinfo.Attributes;
 using Disunity.Disinfo.Extensions;
 using Disunity.Disinfo.Services;
 
-using LiteDB;
-
-using Microsoft.Extensions.Configuration;
-
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
+using SharpYaml;
 using SharpYaml.Serialization;
 
-using Slugify;
+using Embed = Disunity.Disinfo.Models.Embed;
 
 
 namespace Disunity.Disinfo.Modules {
 
     public class FactRef {
 
-        public Fact Fact { get; set; }
+        public Embed Embed { get; set; }
         public string PropStr { get; set; }
         public string InputStr { get; set; }
         public string FactStr { get; set; }
 
     }
 
-    [AsSingleton]
+    [AsScoped]
     public class LearnModule : ModuleBase<SocketCommandContext> {
 
-        private readonly FactService _facts;
+        private readonly ContextService _contextService;
+        private readonly EmbedService _embeds;
         private readonly RoleService _roles;
         private readonly Serializer _serializer;
 
@@ -48,14 +45,15 @@ namespace Disunity.Disinfo.Modules {
             "description", "author", "color", "url", "image", "thumbnail", "locked"
         };
 
-        public LearnModule(FactService facts, RoleService roles) {
-            _facts = facts;
+        public LearnModule(ContextService contextService, EmbedService embeds, RoleService roles) {
+            _contextService = contextService;
+            _embeds = embeds;
             _roles = roles;
             _serializer = new Serializer();
         }
 
-        private Task ReplyAsync(ICommandContext context, string message = null, Embed embed = null) {
-            return context.Channel.SendMessageAsync(message, embed: embed);
+        private Task ReplyAsync(string message = null, Discord.Embed embed = null) {
+            return _contextService.Context.Channel.SendMessageAsync(message, embed: embed);
         }
 
         private ImmutableArray<string> CapturesFrom(Match match, int index = 1) {
@@ -69,33 +67,33 @@ namespace Disunity.Disinfo.Modules {
                         .ToImmutableArray();
         }
 
-        private Fact ForgetProperty(string index, bool isAdmin = false) {
+        private Embed ForgetProperty(string index, bool isAdmin = false) {
             var parts = index.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-            var fact = _facts.Lookup(parts[0]);
+            var fact = _embeds.Lookup(parts[0]);
 
             if (fact.Locked && !isAdmin) {
                 return null;
             }
 
-            return _facts.Update(parts[0], parts[1], "null");
+            return _embeds.Update(parts[0], parts[1], "null");
         }
 
-        private Fact ForgetFact(string index, bool isAdmin = false) {
-            var fact = _facts.Lookup(index);
+        private Embed ForgetFact(string index, bool isAdmin = false) {
+            var fact = _embeds.Lookup(index);
 
             if (fact.Locked && !isAdmin) {
                 return null;
             }
 
-            return _facts.Forget(index) ? fact : null;
+            return _embeds.Forget(index) ? fact : null;
         }
 
         private FactRef ParseRef(string input) {
             var (factStr, propStr, _) = input.Split('.', 2);
-            var fact = _facts.Lookup(factStr);
+            var fact = _embeds.Lookup(factStr);
 
             return new FactRef {
-                Fact = fact,
+                Embed = fact,
                 FactStr = factStr,
                 PropStr = propStr,
                 InputStr = input
@@ -103,11 +101,11 @@ namespace Disunity.Disinfo.Modules {
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) FactExists(IEnumerable<FactRef> refs) {
-            return refs.Fork(r => r.Fact != null);
+            return refs.Fork(r => r.Embed != null);
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) FactIsLocked(bool isAdmin, IEnumerable<FactRef> refs) {
-            return refs.Fork(r => r.Fact.Locked && !isAdmin);
+            return refs.Fork(r => r.Embed.Locked && !isAdmin);
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) FactOrProperty(IEnumerable<FactRef> refs) {
@@ -115,28 +113,28 @@ namespace Disunity.Disinfo.Modules {
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) PropertyIsValid(IEnumerable<FactRef> refs) {
-            return refs.Fork(r => r.Fact.Fields.ContainsKey(r.PropStr) || _validFields.Contains(r.PropStr));
+            return refs.Fork(r => r.Embed.Fields.ContainsKey(r.PropStr) || _validFields.Contains(r.PropStr));
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) EmptyOrUpdated(string value, IEnumerable<FactRef> refs) {
             return refs.Select(r => {
-                r.Fact = _facts.Update(r.FactStr, r.PropStr, value);
+                r.Embed = _embeds.Update(r.FactStr, r.PropStr, value);
                 return r;
-            }).Fork(r => r.Fact.IsEmpty);
+            }).Fork(r => r.Embed.IsEmpty);
         }
 
         private (IEnumerable<FactRef>, IEnumerable<FactRef>) EmptyOrUpdated(
             Dictionary<string, string> map, IEnumerable<FactRef> refs) {
             return refs.Select(r => {
                 var value = map[r.InputStr];
-                r.Fact = _facts.Update(r.FactStr, r.PropStr, value);
+                r.Embed = _embeds.Update(r.FactStr, r.PropStr, value);
                 return r;
-            }).Fork(r => r.Fact.IsEmpty);
+            }).Fork(r => r.Embed.IsEmpty);
         }
 
         private IEnumerable<FactRef> DeleteRefs(IEnumerable<FactRef> refs) {
             return refs.Select(r => {
-                _facts.Forget(r.FactStr);
+                _embeds.Forget(r.FactStr);
                 return r;
             });
         }
@@ -148,8 +146,8 @@ namespace Disunity.Disinfo.Modules {
 
         // forget <fact|prop>, <fact|prop>, ...
         [Parser(@"^(?i)forget (?:(?:,\s*)*([^,]+))*")]
-        public async Task<bool> ParserForget(ICommandContext context, Match match) {
-            var isAdmin = context.IsAdmin();
+        public async Task<bool> ParserForget(Match match) {
+            var isAdmin = _contextService.Context.IsAdmin();
             var refs = ParseCaptures(match);
             var (knownRefs, unknownRefs) = FactExists(refs);
             var (lockedRefs, unlockedRefs) = FactIsLocked(isAdmin, knownRefs);
@@ -166,12 +164,12 @@ namespace Disunity.Disinfo.Modules {
                         .WithUpdatedRefs(updatedFacts)
                         .Build();
 
-            await ReplyAsync(context, embed: reply);
+            await ReplyAsync(embed: reply);
 
             return true;
         }
 
-        private async Task<bool> ParserLearnJson(ICommandContext context, string index, string data) {
+        private async Task<bool> ParserLearnJson(string index, string data) {
             Dictionary<string, string> factData;
 
             try {
@@ -182,8 +180,8 @@ namespace Disunity.Disinfo.Modules {
                 }
 
                 factData["Id"] = index;
-                var fact = _facts.Update(factData);
-                await ReplyAsync(context, embed: fact.AsEmbed());
+                var fact = _embeds.Update(factData);
+                await ReplyAsync(embed: fact.AsEmbed());
                 return true;
 
             }
@@ -202,27 +200,27 @@ namespace Disunity.Disinfo.Modules {
                             .WithFields(fields)
                             .Build();
 
-                await ReplyAsync(context, embed: reply);
+                await ReplyAsync(embed: reply);
                 return true;
             }
         }
 
-        private async Task<bool> ParserLearnYaml(ICommandContext context, string index, string data) {
+        private async Task<bool> ParserLearnYaml(string index, string data) {
             Dictionary<string, string> factData;
 
             try {
                 factData = _serializer.Deserialize<Dictionary<string, string>>(data);
 
                 if (factData == null) {
-                    throw new SharpYaml.YamlException("YAML data was blank or not a well-formed Object.");
+                    throw new YamlException("YAML data was blank or not a well-formed Object.");
                 }
 
                 factData["Id"] = index;
-                var fact = _facts.Update(factData);
-                await ReplyAsync(context, embed: fact.AsEmbed());
+                var fact = _embeds.Update(factData);
+                await ReplyAsync(embed: fact.AsEmbed());
                 return true;
             }
-            catch (SharpYaml.YamlException e) {
+            catch (YamlException e) {
                 var fields = e.Data.Keys
                               .Cast<string>()
                               .Select(k => new EmbedFieldBuilder().WithName(k).WithValue(e.Data[k]))
@@ -238,21 +236,21 @@ namespace Disunity.Disinfo.Modules {
                             .WithFields(fields)
                             .Build();
 
-                await ReplyAsync(context, embed: reply);
+                await ReplyAsync(embed: reply);
                 return true;
             }
         }
 
         [Parser(@"(.*?)\s+?(?:is|=)\s+?```(.*?)\n(.*)```")]
-        public async Task<bool> ParserLearnEmbed(ICommandContext context, string index, string format, string data) {
+        public async Task<bool> ParserLearnEmbed(string index, string format, string data) {
             format = format.ToLower();
 
             switch (format) {
                 case "json":
-                    return await ParserLearnJson(context, index, data);
+                    return await ParserLearnJson(index, data);
 
                 case "yaml":
-                    return await ParserLearnYaml(context, index, data);
+                    return await ParserLearnYaml(index, data);
 
                 default:
                     return false;
@@ -261,8 +259,8 @@ namespace Disunity.Disinfo.Modules {
         }
 
         [Parser(@"(?:(?:,\s*)*([^,]+)\s+?(?:is|=)\s+?([^,]+))+")]
-        public async Task<bool> ParserPropUpdate(ICommandContext context, Match match) {
-            var isAdmin = context.IsAdmin();
+        public async Task<bool> ParserPropUpdate(Match match) {
+            var isAdmin = _contextService.Context.IsAdmin();
             var refs = ParseCaptures(match);
             var vals = CapturesFrom(match, 2);
 
@@ -282,17 +280,17 @@ namespace Disunity.Disinfo.Modules {
                 var value = map[r.InputStr];
 
                 if (value == "null") {
-                    r.Fact = null;
+                    r.Embed = null;
                     return r;
                 }
 
-                r.Fact = r.PropStr == null
-                    ? _facts.Learn(r.FactStr, value)
-                    : _facts.Update(r.FactStr, r.PropStr, value);
+                r.Embed = r.PropStr == null
+                    ? _embeds.Learn(r.FactStr, value)
+                    : _embeds.Update(r.FactStr, r.PropStr, value);
 
                 return r;
 
-            }).Fork(r => r.Fact == null);
+            }).Fork(r => r.Embed == null);
 
             var reply = new ReportBuilder()
                         .WithCreatedRefs(createdRefs)
@@ -302,12 +300,12 @@ namespace Disunity.Disinfo.Modules {
                         .WithSkippedRefs(skippedRefs)
                         .Build();
 
-            await ReplyAsync(context, embed: reply);
+            await ReplyAsync(embed: reply);
             return true;
         }
 
         [Parser(@"(.*?)\s+?(?:is|=)\s+?```(.*)```")]
-        public async Task<bool> ParserLearnEmbed(ICommandContext context, string input, string json) {
+        public async Task<bool> ParserLearnEmbed(string input, string json) {
             Dictionary<string, string> factData = null;
 
             try {
@@ -317,15 +315,15 @@ namespace Disunity.Disinfo.Modules {
                 try {
                     factData = _serializer.Deserialize<Dictionary<string, string>>(json);
                 }
-                catch (SharpYaml.YamlException) {
+                catch (YamlException) {
                     return false;
                 }
             }
 
             if (factData != null) {
                 factData["Id"] = input;
-                var fact = _facts.Update(factData);
-                await ReplyAsync(context, embed: fact.AsEmbed());
+                var fact = _embeds.Update(factData);
+                await ReplyAsync(embed: fact.AsEmbed());
                 return true;
             }
 
@@ -333,16 +331,16 @@ namespace Disunity.Disinfo.Modules {
         }
 
         [Parser(@"(.*?)\s+?(?:is|=)\s+?\n(.*)")]
-        public async Task<bool> ParserLearnEmbedUnquoted(ICommandContext context, string input, string json) {
-            return await ParserLearnEmbed(context, input, json);
+        public async Task<bool> ParserLearnEmbedUnquoted(string input, string json) {
+            return await ParserLearnEmbed(input, json);
         }
 
         [Parser(@"(.*)")]
-        public async Task<bool> GlobalLookup(ICommandContext context, string input) {
-            var fact = _facts.Lookup(input);
+        public async Task<bool> GlobalLookup(string input) {
+            var fact = _embeds.Lookup(input);
 
             if (fact != null) {
-                await ReplyAsync(context, embed: fact.AsEmbed());
+                await ReplyAsync(embed: fact.AsEmbed());
                 return true;
             }
 

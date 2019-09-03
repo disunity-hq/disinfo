@@ -18,7 +18,18 @@ namespace Disunity.Disinfo.Extensions {
 
         public static bool IsAdmin(this ICommandContext context) {
             var selfName = context.Client.CurrentUser.Username;
-            var selfRole = context.Guild.Roles.Single(r => r.Name == selfName);
+
+            if (context.Guild.Roles.Count == 0) {
+                return true;
+            }
+
+            var myRoles = context.Guild.Roles.Where(r => r.Name == selfName);
+
+            if (!myRoles.Any()) {
+                return true;
+            }
+            
+            var selfRole = myRoles.Single(r => r.Name == selfName);
             var guildUser = (IGuildUser) context.User;
             return IsAdmin(context, guildUser, selfRole);
         }

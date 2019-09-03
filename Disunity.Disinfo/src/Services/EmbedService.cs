@@ -6,28 +6,29 @@ using System.Reflection;
 using BindingAttributes;
 
 using Disunity.Disinfo.Interfaces;
+using Disunity.Disinfo.Models;
 
 using Slugify;
 
 
 namespace Disunity.Disinfo.Services {
 
-    [AsSingleton]
-    public class FactService {
+    [AsScoped]
+    public class EmbedService {
 
         private readonly DbService _dbService;
         private readonly ISlugHelper _slugHelper;
 
-        public FactService(DbService dbService, ISlugHelper slugHelper) {
+        public EmbedService(DbService dbService, ISlugHelper slugHelper) {
             _dbService = dbService;
             _slugHelper = slugHelper;
         }
 
-        public Fact Lookup(string index) {
+        public Embed Lookup(string index) {
             index = _slugHelper.GenerateSlug(index);
-            Fact fact = null;
-            _dbService.WithTable<Fact>(t => { fact = t.FindById(index); });
-            return fact;
+            Embed embed = null;
+            _dbService.WithTable<Embed>(t => { embed = t.FindById(index); });
+            return embed;
         }
 
         public bool Forget(string index) {
@@ -38,7 +39,7 @@ namespace Disunity.Disinfo.Services {
                 return false;
             }
 
-            _dbService.WithTable<Fact>(t => { t.Delete(o => o.Id == index); });
+            _dbService.WithTable<Embed>(t => { t.Delete(o => o.Id == index); });
             return true;
         }
 
@@ -47,26 +48,26 @@ namespace Disunity.Disinfo.Services {
             return Forget(index);
         }
 
-        public Fact Learn(Fact fact) {
-            fact.Id = _slugHelper.GenerateSlug(fact.Id);
-            var oldFact = Lookup(fact.Id);
+        public Embed Learn(Embed embed) {
+            embed.Id = _slugHelper.GenerateSlug(embed.Id);
+            var oldFact = Lookup(embed.Id);
 
             if (oldFact != null) {
-                _dbService.WithTable<Fact>(t => t.Update(fact));
+                _dbService.WithTable<Embed>(t => t.Update(embed));
             } else {
-                _dbService.WithTable<Fact>(t => t.Insert(fact));
+                _dbService.WithTable<Embed>(t => t.Insert(embed));
             }
 
-            return fact;
+            return embed;
         }
 
-        public Fact Learn(string index, string description) {
+        public Embed Learn(string index, string description) {
             index = _slugHelper.GenerateSlug(index);
-            var fact = new Fact {Id = index, Description = description};
+            var fact = new Embed {Id = index, Description = description};
             return Learn(fact);
         }
 
-        public Fact Update(string index, string key, string value) {
+        public Embed Update(string index, string key, string value) {
             Console.WriteLine($"==== Updating: {index} / {key} / {value}");
             index = _slugHelper.GenerateSlug(index);
 
@@ -77,8 +78,8 @@ namespace Disunity.Disinfo.Services {
             var fact = Lookup(index);
 
             if (fact == null) {
-                fact = new Fact() {Id = index};
-                _dbService.WithTable<Fact>(t => t.Insert(fact));
+                fact = new Embed() {Id = index};
+                _dbService.WithTable<Embed>(t => t.Insert(fact));
             }
 
             if (fact.Fields == null) {
@@ -107,22 +108,22 @@ namespace Disunity.Disinfo.Services {
                 fact.Fields.Remove(key);
             }
             
-            _dbService.WithTable<Fact>(t => t.Update(fact));
+            _dbService.WithTable<Embed>(t => t.Update(fact));
 
             return fact;
         }
 
-        public Fact Update(Dictionary<string, string> factData) {
+        public Embed Update(Dictionary<string, string> factData) {
             var index = _slugHelper.GenerateSlug(factData["Id"]);
             factData.Remove("Id");
 
-            Fact fact = null;
+            Embed embed = null;
 
             foreach (var (key, value) in factData) {
-                fact = Update(index, key, value);
+                embed = Update(index, key, value);
             }
 
-            return fact;
+            return embed;
         }
 
     }
