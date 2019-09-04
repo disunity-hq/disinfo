@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Singleton {
 
     [AsSingleton]
     public class ClientService {

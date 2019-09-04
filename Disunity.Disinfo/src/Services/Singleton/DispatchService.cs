@@ -12,13 +12,14 @@ using Discord.WebSocket;
 
 using Disunity.Disinfo.Attributes;
 using Disunity.Disinfo.Options;
+using Disunity.Disinfo.Services.Scoped;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Singleton {
 
     [AsSingleton]
     public class DispatchService {
@@ -134,6 +135,7 @@ namespace Disunity.Disinfo.Services {
 
             if (parameters.Length == 1 && parameters[0].ParameterType == typeof(Match)) {
                 Console.WriteLine($"Handling message `{message}`");
+                Console.WriteLine($"With handler: {parser}");
                 if (await CollectionHandler(provider, parser, match)) {
                     return true;
                 }
@@ -177,6 +179,7 @@ namespace Disunity.Disinfo.Services {
 
                 var contextService = provider.GetRequiredService<ContextService>();
                 contextService.Context = context;
+                contextService.Application = await _discord.GetApplicationInfoAsync();
                 
                 
                 await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), provider);

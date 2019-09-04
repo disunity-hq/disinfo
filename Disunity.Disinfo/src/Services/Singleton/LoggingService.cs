@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 
 using BindingAttributes;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Singleton {
 
     [AsSingleton]
     public class LoggingService<T> {

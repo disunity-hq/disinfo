@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 
 using BindingAttributes;
@@ -6,7 +5,7 @@ using BindingAttributes;
 using Disunity.Disinfo.Interfaces;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Singleton {
 
     [AsSingleton(typeof(IBootService))]
     public class StartupService : IBootService {

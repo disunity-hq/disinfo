@@ -3,20 +3,20 @@ using System.Linq;
 
 using Discord;
 
-using Xunit;
+using Disunity.Disinfo.Models.Entities;
 
-using Embed = Disunity.Disinfo.Models.Embed;
+using Xunit;
 
 
 namespace Disunity.Disinfo.Tests.FactTests {
 
     public class FactAsEmbed {
 
-        private Embed _embed;
+        private EmbedEntry _embedEntry;
         private Discord.Embed _discordEmbed;
 
         public FactAsEmbed() {
-            _embed = new Embed() {
+            _embedEntry = new EmbedEntry() {
                 Id = "id",
                 Description = "description",
                 Author = "author",
@@ -31,18 +31,18 @@ namespace Disunity.Disinfo.Tests.FactTests {
                 Locked = true
             };
 
-            _discordEmbed = _embed.AsEmbed();
+            _discordEmbed = _embedEntry.AsEmbed();
         }
 
         [Fact]
         public void EmbedPropertiesCorrect() {
-            Assert.Equal(_discordEmbed.Title, _embed.Id);
-            Assert.Equal(_discordEmbed.Description, _embed.Description);
-            Assert.Equal(_discordEmbed.Author?.Name, _embed.Author);
-            Assert.Equal(_discordEmbed.Url, _embed.Url);
-            Assert.Equal(_discordEmbed.Image?.Url, _embed.ImageUrl);
-            Assert.Equal(_discordEmbed.Thumbnail?.Url, _embed.ThumbnailUrl);
-            Assert.Equal(_discordEmbed.Color, _embed.DiscordColor);
+            Assert.Equal(_discordEmbed.Title, _embedEntry.Id);
+            Assert.Equal(_discordEmbed.Description, _embedEntry.Description);
+            Assert.Equal(_discordEmbed.Author?.Name, _embedEntry.Author);
+            Assert.Equal(_discordEmbed.Url, _embedEntry.Url);
+            Assert.Equal(_discordEmbed.Image?.Url, _embedEntry.ImageUrl);
+            Assert.Equal(_discordEmbed.Thumbnail?.Url, _embedEntry.ThumbnailUrl);
+            Assert.Equal(_discordEmbed.Color, _embedEntry.DiscordColor);
             Assert.Equal("*Locked*", _discordEmbed.Footer?.Text);
             Assert.True(_discordEmbed.Fields.Any(f => f.Name == "foo" && f.Value == "bar"));
             Assert.True(_discordEmbed.Fields.Any(f => f.Name == "biz" && f.Value == "baz"));

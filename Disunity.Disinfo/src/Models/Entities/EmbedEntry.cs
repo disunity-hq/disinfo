@@ -8,11 +8,15 @@ using Discord;
 using Disunity.Disinfo.Interfaces;
 
 
-namespace Disunity.Disinfo.Models {
+namespace Disunity.Disinfo.Models.Entities {
 
-    public class Embed : ITable {
+    public class EmbedEntry : ITable {
 
         public string Id { get; set; }
+
+        public string Guild { get; set; }
+
+        public string Slug { get; set; }
         public string Description { get; set; }
 
         public string Author { get; set; }
@@ -51,7 +55,7 @@ namespace Disunity.Disinfo.Models {
         }
 
         public Discord.Embed AsEmbed() {
-            var builder = new EmbedBuilder().WithTitle(Id)
+            var builder = new EmbedBuilder().WithTitle(Slug)
                                             .WithDescription(Description)
                                             .WithAuthor(Author)
                                             .WithUrl(Url)
@@ -59,22 +63,31 @@ namespace Disunity.Disinfo.Models {
                                             .WithThumbnailUrl(ThumbnailUrl)
                                             .WithColor(DiscordColor);
 
+            var fields = new List<EmbedFieldBuilder>();
+
             if (Fields != null && Fields.Count > 0) {
-                builder.Fields = Fields.Keys
-                                       .Where(k => Fields[k] != null)
-                                       .Where(k => Fields[k] != "")
-                                       .Select(k => new EmbedFieldBuilder().WithName(k).WithValue(Fields[k]))
-                                       .ToList();
+                fields = fields.Concat(Fields.Keys
+                                             .Where(k => Fields[k] != null)
+                                             .Where(k => Fields[k] != "")
+                                             .Select(k => new EmbedFieldBuilder().WithName(k).WithValue(Fields[k])))
+                               .ToList();
             }
 
-            if (Locked) {
+            if (Guild == "0") {
+                var footer = new EmbedFooterBuilder()
+                             .WithText("*Global*")
+                             .WithIconUrl("https://image.flaticon.com/icons/png/512/65/65318.png");
+
+                builder = builder.WithFooter(footer);
+            } else if (Locked) {
                 var footer = new EmbedFooterBuilder()
                              .WithText("*Locked*")
                              .WithIconUrl("https://cdn0.iconfinder.com/data/icons/mono2/100/lock-512.png");
 
-                builder.WithFooter(footer);
+                builder = builder.WithFooter(footer);
             }
 
+            builder = builder.WithFields(fields);
             return builder.Build();
         }
 

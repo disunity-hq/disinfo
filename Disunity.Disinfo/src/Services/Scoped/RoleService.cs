@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Threading.Tasks;
 
 using BindingAttributes;
 
@@ -8,7 +7,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Scoped {
 
     [AsScoped]
     public class RoleService {

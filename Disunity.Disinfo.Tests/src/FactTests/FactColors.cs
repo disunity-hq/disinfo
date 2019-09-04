@@ -1,4 +1,5 @@
 using Disunity.Disinfo.Models;
+using Disunity.Disinfo.Models.Entities;
 
 using Xunit;
 
@@ -9,7 +10,7 @@ namespace Disunity.Disinfo.Tests.FactTests {
 
         [Fact]
         public void CorrectDiscordColorReturned() {
-            var fact = new Embed() {
+            var fact = new EmbedEntry() {
                 Color = "Red"
             };    
 
@@ -18,14 +19,14 @@ namespace Disunity.Disinfo.Tests.FactTests {
 
         [Fact]
         public void DefaultDiscordColorReturned() {
-            var fact = new Embed();
+            var fact = new EmbedEntry();
             
             Assert.Equal(Discord.Color.Default, fact.DiscordColor);
         }
 
         [Fact]
         public void InvalidColorReturnsDefault() {
-            var fact = new Embed() {
+            var fact = new EmbedEntry() {
                 Color = "foobar"
             };
 
@@ -34,7 +35,7 @@ namespace Disunity.Disinfo.Tests.FactTests {
 
         [Fact]
         public void ColorsAreCaseInsensitive() {
-            var fact = new Embed() {
+            var fact = new EmbedEntry() {
                 Color = "grEEn"
             };
             

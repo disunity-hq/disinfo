@@ -1,43 +1,29 @@
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Threading;
 
 using BindingAttributes;
 
 using Disunity.Disinfo.Interfaces;
 using Disunity.Disinfo.Options;
+using Disunity.Disinfo.Services.Scoped;
 
 using LiteDB;
 
 using Microsoft.Extensions.Options;
 
 
-namespace Disunity.Disinfo.Services {
+namespace Disunity.Disinfo.Services.Singleton {
 
-    [AsScoped]
+    [AsSingleton]
     public class DbService {
 
         private readonly DbServiceOptions _options;
-        public ContextService Context { get; }
-        private readonly string _filename;
 
-        public DbService(IOptions<DbServiceOptions> options, ContextService contextService) {
+        public DbService(IOptions<DbServiceOptions> options) {
             _options = options.Value;
-            Context = contextService;
-        }
-
-        public string Filename {
-            get {
-                var rootPath = _options.Path;
-                var guildId = Context.Context.Guild.Id.ToString();
-                var filename = Path.Join(rootPath, guildId);
-                return filename;
-            }
         }
 
         public void WithDb(Action<LiteDatabase> handler) {
-            using (var db = new LiteDatabase(Filename)) {
+            using (var db = new LiteDatabase(_options.Path)) {
                 handler(db);
             }
         }

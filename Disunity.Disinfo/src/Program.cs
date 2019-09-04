@@ -11,11 +11,14 @@ using Discord.WebSocket;
 using Disunity.Disinfo.Interfaces;
 using Disunity.Disinfo.Options;
 using Disunity.Disinfo.Services;
+using Disunity.Disinfo.Services.Scoped;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using SharpYaml.Serialization;
 
 using Slugify;
 
@@ -57,6 +60,7 @@ namespace Disunity.Disinfo {
             services // bind third-party services (can't add binding attributes to classes we don't control)
                 .AddLogging(builder => builder.AddConsole())
                 .AddSingleton(configuration)
+                .AddSingleton<Serializer>(new Serializer())
                 .AddSingleton<ISlugHelper, SlugHelper>()
                 .AddSingleton<CommandService>();
         }
