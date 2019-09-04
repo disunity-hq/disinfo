@@ -12,15 +12,21 @@ namespace Disunity.Disinfo.Models {
         public Refs Locked { get; }
         public Refs Unlocked { get; }
 
-        public FilterResults(Refs known, Refs unknown, 
+        public Refs Slugs { get; }
+        public Refs Properties { get; }
+
+        public FilterResults(Refs known, Refs unknown,
                              Refs global, Refs local,
-                             Refs locked, Refs unlocked) {
+                             Refs locked, Refs unlocked,
+                             Refs slugs, Refs properties) {
             Known = known;
             Unknown = unknown;
             Global = global;
             Local = local;
             Locked = locked;
             Unlocked = unlocked;
+            Slugs = slugs;
+            Properties = properties;
         }
 
     }

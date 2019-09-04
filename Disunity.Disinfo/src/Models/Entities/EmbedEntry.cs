@@ -54,7 +54,7 @@ namespace Disunity.Disinfo.Models.Entities {
             }
         }
 
-        public Discord.Embed AsEmbed() {
+        public Embed AsEmbed() {
             var builder = new EmbedBuilder().WithTitle(Slug)
                                             .WithDescription(Description)
                                             .WithAuthor(Author)

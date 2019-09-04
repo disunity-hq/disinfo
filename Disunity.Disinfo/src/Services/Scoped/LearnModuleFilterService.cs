@@ -67,9 +67,10 @@ namespace Disunity.Disinfo.Services.Scoped {
             var (Global, Local) = FactIsGlobal(Known);
             // some known refs will be locked to the user
             var (Locked, Unlocked) = FactIsLocked(Local);
-            return new FilterResults (
-                Known, Unknown, Global, Local, Locked, Unlocked
-            );
+            var (Slugs, Properties) = FactOrProperty(Unlocked);
+
+            return new FilterResults(
+                Known, Unknown, Global, Local, Locked, Unlocked, Slugs, Properties);
         }
 
 
