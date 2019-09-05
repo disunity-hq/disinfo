@@ -1,11 +1,10 @@
-using System;
 using System.Collections.Generic;
 
 using BindingAttributes;
 
-using Disunity.Disinfo.Interfaces;
-using Disunity.Disinfo.Models.Entities;
 using Disunity.Disinfo.Extensions;
+using Disunity.Disinfo.Models;
+using Disunity.Disinfo.Models.Entities;
 
 using Slugify;
 
@@ -23,32 +22,31 @@ namespace Disunity.Disinfo.Services.Singleton {
             _slugHelper = slugHelper;
         }
 
-        public EmbedEntry Query(string input, string guild = "0") {
-            var slug = _slugHelper.GenerateSlug(input);
+        /// <summary>
+        /// Returns an EmbedEntry from the database or null
+        /// </summary>
+        /// <param name="query">A string which will be slugified to look up the entry.</param>
+        /// <param name="guild">A string containing the Guild ID</param>
+        /// <returns></returns>
+        public EmbedEntry Query(string query, string guild = "0") {
+            var slug = _slugHelper.GenerateSlug(query);
             EmbedEntry embedEntry = null;
-            _dbService.WithTable<EmbedEntry>(t => { embedEntry = t.FindById(slug, guild); });
+            _dbService.WithTable<EmbedEntry>(t => { embedEntry = t.QueryEntry(slug, guild); });
             return embedEntry;
         }
 
-        public bool Forget(string input, string guild = "0") {
-            var slug = _slugHelper.GenerateSlug(input);
-            var fact = Query(slug, guild);
-
-            if (fact == null) {
-                return false;
-            }
-
-            _dbService.WithTable<EmbedEntry>(t => { t.Delete(o => o.Slug == slug && 
-                                                                  o.Guild == guild); });
-            return true;
+        public void Delete(EmbedEntry entry) {
+            _dbService.WithTable<EmbedEntry>(t => { t.Delete(entry.Id); });
         }
 
-        public EmbedEntry Learn(EmbedEntry embedEntry) {
+        public EmbedEntry Save(EmbedEntry embedEntry) {
             embedEntry.Slug = _slugHelper.GenerateSlug(embedEntry.Slug);
+            embedEntry.AsEmbed();
+
             var oldFact = Query(embedEntry.Slug, embedEntry.Guild);
 
             if (oldFact != null) {
-                _dbService.WithTable<EmbedEntry>(t => t.UpdateEntry(oldFact));
+                _dbService.WithTable<EmbedEntry>(t => t.UpdateEntry(embedEntry));
             } else {
                 _dbService.WithTable<EmbedEntry>(t => t.InsertEntry(embedEntry));
             }
@@ -56,72 +54,85 @@ namespace Disunity.Disinfo.Services.Singleton {
             return embedEntry;
         }
 
-        public EmbedEntry Learn(string input, string description, string guild = "0") {
-            var slug = _slugHelper.GenerateSlug(input);
-            var fact = new EmbedEntry {Slug = slug, Guild = guild, Description = description};
-            return Learn(fact);
-        }
-
-        public EmbedEntry Update(string input, string key, string value, string guild = "0") {
-            var slug = _slugHelper.GenerateSlug(input);
+        public EmbedEntry Update(string query, string property, string value, string guild = "0") {
+            var slug = _slugHelper.GenerateSlug(query);
 
             if (value != null && value.ToLower() == "null") {
                 value = null;
             }
 
-            var fact = Query(slug, guild);
+            var entry = Query(slug, guild);
 
-            if (fact == null) {
-                fact = new EmbedEntry() {Slug = slug, Guild = guild};
-                _dbService.WithTable<EmbedEntry>(t => t.InsertEntry(fact));
+            if (entry != null & property == null && value == null) {
+                Delete(entry);
+                return null;
             }
 
-            if (fact.Fields == null) {
-                fact.Fields = new Dictionary<string, string>();
+            if (entry == null) {
+                entry = new EmbedEntry {Slug = slug, Guild = guild};
             }
 
-            var lowerKey = key?.ToLower() ?? "description";
+            if (entry.Fields == null) {
+                entry.Fields = new Dictionary<string, string>();
+            }
 
-            if (lowerKey == "description") {
-                fact.Description = value;
-            } else if (lowerKey == "author") {
-                fact.Author = value;
-            } else if (lowerKey == "color") {
-                fact.Color = value;
-            } else if (lowerKey == "url") {
-                fact.Url = value;
-            } else if (lowerKey == "thumbnail") {
-                fact.ThumbnailUrl = value;
-            } else if (lowerKey == "image") {
-                fact.ImageUrl = value;
-            } else if (lowerKey == "locked") {
-                fact.Locked = value?.ToLower() == "true";
-            }else if (value != null) {
-                fact.Fields[lowerKey] = value;
-            } else if (fact.Fields.ContainsKey(key)) {
-                fact.Fields.Remove(key);
+            if (property == null) {
+                entry.Description = value;
+                entry = Save(entry);
+            } else {
+
+                switch (property.ToLower()) {
+                    case "description":
+                        entry.Description = value;
+                        break;
+
+                    case "author":
+                        entry.Author = value;
+                        break;
+
+                    case "color":
+                        entry.Color = value;
+                        break;
+
+                    case "url":
+                        entry.Url = value;
+                        break;
+
+                    case "thumbnail":
+                        entry.ThumbnailUrl = value;
+                        break;
+
+                    case "image":
+                        entry.ImageUrl = value;
+                        break;
+
+                    case "locked":
+                        entry.Locked = value?.ToLower() == "true";
+                        break;
+
+                    default: {
+                        if (value != null) {
+                            entry.Fields[property] = value;
+                        } else if (entry.Fields.ContainsKey(property)) {
+                            entry.Fields.Remove(property);
+                        }
+
+                        break;
+                    }
+                }
             }
             
-            _dbService.WithTable<EmbedEntry>(t => t.UpdateEntry(fact));
-
-            return fact;
-        }
-
-        public EmbedEntry Update(Dictionary<string, string> factData) {
-            var slug = _slugHelper.GenerateSlug(factData["Slug"]);
-            var guild = factData["Guild"];
-
-            factData.Remove("Slug");
-            factData.Remove("Guild");
-
-            EmbedEntry embedEntry = null;
-
-            foreach (var (key, value) in factData) {
-                embedEntry = Update(slug, key, value, guild);
+            if (entry.IsEmpty) {
+                Delete(entry);
+                return null;
             }
 
-            return embedEntry;
+            return Save(entry);
         }
+
+        public void UpdateReference(EmbedReference embedRef, string value, string guild = "0") {
+            embedRef.EmbedEntry = Update(embedRef.Slug, embedRef.Property, value, guild);
+        } 
 
     }
 

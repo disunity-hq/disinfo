@@ -4,7 +4,6 @@ using BindingAttributes;
 
 using Disunity.Disinfo.Interfaces;
 using Disunity.Disinfo.Options;
-using Disunity.Disinfo.Services.Scoped;
 
 using LiteDB;
 

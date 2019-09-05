@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,7 +9,6 @@ using Discord;
 using Discord.Commands;
 
 using Disunity.Disinfo.Attributes;
-using Disunity.Disinfo.Extensions;
 using Disunity.Disinfo.Services;
 using Disunity.Disinfo.Services.Scoped;
 using Disunity.Disinfo.Services.Singleton;
@@ -26,21 +25,28 @@ namespace Disunity.Disinfo.Modules {
 
         private readonly ContextService _contextService;
         private readonly EmbedService _embeds;
-        private readonly RoleService _roles;
         private readonly LearnModuleService _learnService;
-        
-        public LearnModule(ContextService contextService, 
-                           EmbedService embeds, 
-                           RoleService roles, 
+
+        public LearnModule(ContextService contextService,
+                           EmbedService embeds,
                            LearnModuleService learnService) {
             _contextService = contextService;
             _embeds = embeds;
-            _roles = roles;
             _learnService = learnService;
         }
-        
+
         public Task ReplyAsync(string message = null, Embed embed = null) {
             return _contextService.Context.Channel.SendMessageAsync(message, embed: embed);
+        }
+
+
+        private async Task HandleArgumentError(ArgumentException e) {
+            var reply = new EmbedBuilder()
+                        .WithTitle($"Property error: {e.ParamName}")
+                        .WithDescription(e.ParamName)
+                        .Build();
+
+            await ReplyAsync(embed: reply);
         }
 
         public async Task<bool> CheckAccess(string input) {
@@ -70,9 +76,12 @@ namespace Disunity.Disinfo.Modules {
 
             return true;
         }
-        public async Task<Embed> LearnJson(string input, string json) {
+
+        public async Task<bool> LearnJson(string input, string json) {
             try {
-                return _learnService.LearnJson(input, json);
+                var reply = _learnService.LearnJson(input, json);
+                if (reply == null) return false;
+                await ReplyAsync(embed: reply.Build());
             }
             catch (JsonException e) {
 
@@ -90,16 +99,20 @@ namespace Disunity.Disinfo.Modules {
                             .Build();
 
                 await ReplyAsync(embed: reply);
-                return null;
             }
-            
+            catch (ArgumentException e) {
+                await HandleArgumentError(e);
+            }
+
+            return true;
+
         }
 
-        public async Task<Embed> LearnYaml(string input, string yaml) {
-            Dictionary<string, string> factData;
-
+        public async Task<bool> LearnYaml(string input, string yaml) {
             try {
-                return _learnService.LearnYaml(input, yaml);
+                var reply = _learnService.LearnYaml(input, yaml);
+                if (reply == null) return false;
+                await ReplyAsync(embed: reply.Build());
             }
             catch (YamlException e) {
                 var fields = e.Data.Keys
@@ -118,11 +131,13 @@ namespace Disunity.Disinfo.Modules {
                             .Build();
 
                 await ReplyAsync(embed: reply);
-                return null;
             }
+            catch (ArgumentException e) {
+                await HandleArgumentError(e);
+            }
+
+            return true;
         }
-
-
 
         // forget <fact|prop>, <fact|prop>, ...
         [Parser(@"^(?i)forget (?:(?:,\s*)*([^,]+))*")]
@@ -133,9 +148,9 @@ namespace Disunity.Disinfo.Modules {
         }
 
         [Parser(@"(.*?)\s+?(?:is|=)\s+?```(.*?)\n(.*)```")]
-        public async Task<Embed> ParserLearnEmbed(string input, string format, string data) {
-            if (!await CheckAccess(input)) return null;
-            
+        public async Task<bool> ParserLearnEmbed(string input, string format, string data) {
+            if (!await CheckAccess(input)) return true;
+
             format = format.ToLower();
 
             switch (format) {
@@ -151,23 +166,22 @@ namespace Disunity.Disinfo.Modules {
 
         }
 
-        [Parser(@"(?:(?:,\s*)*([^,]+)\s+?(?:is|=)\s+?([^,]+))+")]
-        public async Task<bool> ParserPropUpdate(Match match) {
-            var reply = _learnService.UpdateMatches(match).Build();
-            await ReplyAsync(embed: reply);
-            return true;
-        }
-
         [Parser(@"(.*?)\s+?(?:is|=)\s+?\n(.*)")]
         public async Task<bool> ParserLearnEmbedUnquoted(string input, string yaml) {
-            var embed = await LearnYaml(input, yaml);
+            return await LearnYaml(input, yaml);
+        }
 
-            if (embed != null) {
-                await ReplyAsync(embed: embed);
-                return true;
+        [Parser(@"(?:(?:,\s*)*([^,]+)\s+?(?:is|=)\s+?([^,]+))+")]
+        public async Task<bool> ParserPropUpdate(Match match) {
+            try {
+                var reply = _learnService.UpdateMatches(match).Build();
+                await ReplyAsync(embed: reply);
+            }
+            catch (ArgumentException e) {
+                await HandleArgumentError(e);
             }
 
-            return false;
+            return true;
         }
 
         [Parser(@"(.*)")]

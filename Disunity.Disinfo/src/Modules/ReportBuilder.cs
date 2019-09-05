@@ -5,7 +5,7 @@ using Discord;
 
 using Disunity.Disinfo.Models;
 
-using FactRefs = System.Collections.Generic.IEnumerable<Disunity.Disinfo.Models.EmbedRef>;
+using FactRefs = System.Collections.Generic.IEnumerable<Disunity.Disinfo.Models.EmbedReference>;
 
 
 namespace Disunity.Disinfo.Modules {
@@ -60,8 +60,8 @@ namespace Disunity.Disinfo.Modules {
             return this;
         }
 
-        private EmbedRef SingleUpdate() {
-            if (UpdatedRefs == null || UpdatedRefs.Count() > 1) {
+        private EmbedReference SingleUpdate() {
+            if (UpdatedRefs == null || UpdatedRefs.Count() != 1) {
                 return null;
             }
 
@@ -77,8 +77,8 @@ namespace Disunity.Disinfo.Modules {
             return UpdatedRefs.First();
         }
 
-        private EmbedRef SingleCreated() {
-            if (CreatedRefs == null || CreatedRefs.Count() > 1) {
+        private EmbedReference SingleCreated() {
+            if (CreatedRefs == null || CreatedRefs.Count() != 1) {
                 return null;
             }
 
@@ -94,7 +94,7 @@ namespace Disunity.Disinfo.Modules {
             return CreatedRefs.First();
         }
 
-        private EmbedRef SingleRef() {
+        private EmbedReference SingleRef() {
             return SingleCreated() ?? SingleUpdate();
         }
 
@@ -106,23 +106,23 @@ namespace Disunity.Disinfo.Modules {
             var fields = new List<EmbedFieldBuilder>();
 
             if (CreatedRefs?.Any() ?? false) {
-                fields.Add(ListField("I created", CreatedRefs.Select(r => r.EmbedEntry.Slug)));
+                fields.Add(ListField("I created", CreatedRefs.Select(r => r.Slug)));
             }
 
             if (DeletedRefs?.Any() ?? false) {
-                fields.Add(ListField("I deleted", DeletedRefs.Select(r => r.EmbedEntry.Slug)));
+                fields.Add(ListField("I deleted", DeletedRefs.Select(r => r.Slug)));
             }
 
             if (UpdatedRefs?.Any() ?? false) {
-                fields.Add(ListField("I updated", UpdatedRefs.Select(r => r.EmbedEntry.Slug)));
+                fields.Add(ListField("I updated", UpdatedRefs.Select(r => r.Slug)));
             }
 
             if (GlobalRefs?.Any() ?? false) {
-                fields.Add(ListField("These are global", GlobalRefs.Select(r => r.EmbedEntry.Slug)));
+                fields.Add(ListField("These are global", GlobalRefs.Select(r => r.Slug)));
             }
 
             if (LockedRefs?.Any() ?? false) {
-                fields.Add(ListField("These are locked", LockedRefs.Select(r => r.EmbedEntry.Slug)));
+                fields.Add(ListField("These are locked", LockedRefs.Select(r => r.Slug)));
             }
 
             if (MissingRefs?.Any() ?? false) {

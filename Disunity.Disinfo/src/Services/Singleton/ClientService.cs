@@ -27,7 +27,7 @@ namespace Disunity.Disinfo.Services.Singleton {
 
             Client = client;
             Client.Log += clientLog.LogMessage;
-            Console.Error.WriteLine($"Attaching message delegate");
+            Console.Error.WriteLine("Attaching message delegate");
             Client.MessageReceived += dispatch.OnMessageReceivedAsync;
             
             Options = options.Value;

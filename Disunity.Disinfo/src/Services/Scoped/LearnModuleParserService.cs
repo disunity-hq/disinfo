@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 
 using BindingAttributes;
 
+using Discord;
+
 using Disunity.Disinfo.Extensions;
 using Disunity.Disinfo.Models;
 
@@ -32,7 +34,7 @@ namespace Disunity.Disinfo.Services.Singleton {
 
         }
 
-        public ImmutableArray<string> CapturesFrom(Match match, int index = 1) {
+        public ImmutableArray<string> CapturesFromMatchGroup(Match match, int index = 1) {
             if (index >= match.Groups.Count) {
                 return new ImmutableArray<string>();
             }
@@ -43,45 +45,52 @@ namespace Disunity.Disinfo.Services.Singleton {
                         .ToImmutableArray();
         }
 
-        private EmbedRef ParseRef(string input) {
-            var (factStr, propStr, _) = input.Split('.', 2);
-            var fact = _embedService.Query(factStr, _contextService.Guild);
+        public EmbedReference ParseReference(string input) {
+            var (slug, property, _) = input.Split('.', 2);
+            var entry = _embedService.Query(slug) ?? _embedService.Query(slug, _contextService.Guild);
 
-            return new EmbedRef {
-                EmbedEntry = fact,
-                Slug = factStr,
-                Property = propStr,
+            return new EmbedReference {
+                EmbedEntry = entry,
+                Slug = slug,
+                Property = property,
                 Input = input
             };
         }
 
-        public IEnumerable<EmbedRef> ParseCaptures(Match match, int index = 1) {
-            var captures = CapturesFrom(match, index);
-            return captures.Select(ParseRef).ToList();
+        public IEnumerable<EmbedReference> ParseReferences(Match match, int index = 1) {
+            var captures = CapturesFromMatchGroup(match, index);
+            return captures.Select(ParseReference);
         }
 
-        public Dictionary<string, string> LoadJson(string index, string json) {
+        public Dictionary<EmbedReference, string> LoadJson(string input, string json) {
             var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
 
             if (data == null) {
                 throw new JsonException("JSON data was blank or not a well-formed Object.");
             }
 
-            data["Slug"] = index;
-            data["Guild"] = _contextService.Guild;
-            return data;
+            return data.Select(kp => {
+                var embedReference = ParseReference(input);
+                var (property, value) = kp;
+                embedReference.Property = property;
+                return (embedReference, value);
+            }).ToDictionary(tup => tup.Item1, tup => tup.Item2);
+
         }
 
-        public Dictionary<string, string> LoadYaml(string input, string yaml) {
+        public Dictionary<EmbedReference, string> LoadYaml(string input, string yaml) {
             var data = _serializer.Deserialize<Dictionary<string, string>>(yaml);
 
             if (data == null) {
                 throw new YamlException("YAML data was blank or not a well-formed Object.");
             }
 
-            data["Slug"] = input;
-            data["Guild"] = _contextService.Guild;
-            return data;
+            return data.Select(kp => {
+                var embedReference = ParseReference(input);
+                var (property, value) = kp;
+                embedReference.Property = property;
+                return (embedReference, value);
+            }).ToDictionary(tup => tup.Item1, tup => tup.Item2);
         }
 
     }

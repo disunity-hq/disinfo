@@ -12,7 +12,6 @@ using Discord.WebSocket;
 
 using Disunity.Disinfo.Attributes;
 using Disunity.Disinfo.Options;
-using Disunity.Disinfo.Services.Scoped;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -147,6 +146,7 @@ namespace Disunity.Disinfo.Services.Singleton {
         private async Task<bool> ProcessParsers(IServiceProvider provider, string message) {
             foreach (var parser in _parsers) {
                 if (await ProcessParser(provider, parser, message)) {
+                    Console.WriteLine($"Command was handled by: {parser.Name}");
                     return true;
                 }
             }
