@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using BindingAttributes;
 
@@ -33,6 +35,16 @@ namespace Disunity.Disinfo.Services.Singleton {
             EmbedEntry embedEntry = null;
             _dbService.WithTable<EmbedEntry>(t => { embedEntry = t.QueryEntry(slug, guild); });
             return embedEntry;
+        }
+
+        public EmbedEntry[] AllForGuild(string guild = "0") {
+            EmbedEntry[] entries = null;
+            _dbService.WithTable<EmbedEntry>(t => { entries = t.Find(o => o.Guild == guild).ToArray(); });
+            return entries;
+        }
+
+        public IEnumerable<EmbedEntry> All() {
+            return _dbService.WithTable<EmbedEntry, IEnumerable<EmbedEntry>>(t => t.FindAll());
         }
 
         public void Delete(EmbedEntry entry) {
@@ -125,7 +137,7 @@ namespace Disunity.Disinfo.Services.Singleton {
                     }
                 }
             }
-            
+
             if (entry.IsEmpty) {
                 Delete(entry);
                 return null;
@@ -136,7 +148,7 @@ namespace Disunity.Disinfo.Services.Singleton {
 
         public void UpdateReference(EmbedReference embedRef, string value, string guild = "0") {
             embedRef.EmbedEntry = Update(embedRef.Slug, embedRef.Property, value, guild);
-        } 
+        }
 
     }
 

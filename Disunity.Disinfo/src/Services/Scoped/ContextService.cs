@@ -51,7 +51,7 @@ namespace Disunity.Disinfo.Services {
                     return true;
                 }
 
-                var selfRole = myRoles.Single(r => r.Name == selfName);
+                var selfRole = myRoles.First();
                 var guildUser = (IGuildUser) Context.User;
                 return HasAdmin(guildUser, selfRole);
             }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -26,19 +27,21 @@ namespace Disunity.Disinfo.Modules {
         private readonly ContextService _contextService;
         private readonly EmbedService _embeds;
         private readonly LearnModuleService _learnService;
+        private readonly ClientService _clientService;
 
         public LearnModule(ContextService contextService,
                            EmbedService embeds,
-                           LearnModuleService learnService) {
+                           LearnModuleService learnService, 
+                           ClientService clientService) {
             _contextService = contextService;
             _embeds = embeds;
             _learnService = learnService;
+            _clientService = clientService;
         }
 
         public Task ReplyAsync(string message = null, Embed embed = null) {
             return _contextService.Context.Channel.SendMessageAsync(message, embed: embed);
         }
-
 
         private async Task HandleArgumentError(ArgumentException e) {
             var reply = new EmbedBuilder()
@@ -136,6 +139,58 @@ namespace Disunity.Disinfo.Modules {
                 await HandleArgumentError(e);
             }
 
+            return true;
+        }
+
+        [Parser(@"^(?i)inspect")]
+        public async Task<bool> InspectAsync() {
+            if (!_contextService.IsManagement) return false;
+            
+            var entries = _embeds.All();
+
+            if (entries.Count() == 0) {
+                await ReplyAsync("No information found.");
+                return true;
+            }
+
+            var fields = new List<EmbedFieldBuilder>() {
+                new EmbedFieldBuilder()
+                    .WithName("Number of entries")
+                    .WithValue(entries.Count())
+            };
+
+            var byGuild = entries.Select(x => (Guild: _clientService.Client.GetGuild(ulong.Parse(x.Guild)).Name, x.Slug))
+                                 .GroupBy(x => x.Guild)
+                                 .ToDictionary(o => o.Key, o => o.ToList());
+
+            foreach (var (guild, mappedEntries) in byGuild) {
+                fields.Add(new EmbedFieldBuilder()
+                           .WithName(guild)
+                           .WithValue(string.Join(", ", mappedEntries.Select(x => x.Slug))));
+            }
+
+            var reply = new EmbedBuilder()
+                        .WithTitle("Global info")
+                        .WithFields(fields);
+
+            await ReplyAsync(embed: reply.Build());
+            return true;
+        }
+
+        [Parser(@"^(?i)inspect (\d+)")]
+        public async Task<bool> InspectAsync(string guild) {
+            var entries = _embeds.AllForGuild(guild).ToArray();
+
+            if (entries.Any()) {
+                await ReplyAsync("No information found.");
+                return true;
+            }
+
+            var reply = new EmbedBuilder()
+                        .WithTitle($"Info about guild #{guild}")
+                        .WithFields(new EmbedFieldBuilder().WithName("Number of entries").WithValue(entries.Count()));
+
+            await ReplyAsync(embed: reply.Build());
             return true;
         }
 

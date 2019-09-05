@@ -29,7 +29,7 @@ namespace Disunity.Disinfo.Services.Singleton {
         private readonly ILogger<DispatchService> _logger;
         private readonly IServiceProvider _provider;
         private readonly IEnumerable<MethodInfo> _parsers;
-
+        private Random _rng;
 
         public DispatchService(
             LoggingService<CommandService> logService,
@@ -43,8 +43,8 @@ namespace Disunity.Disinfo.Services.Singleton {
             _logger = logger;
             _provider = provider;
             _discord = socketClient;
-
             _parsers = FindAllParsers();
+            _rng = new Random();
         }
 
         private IEnumerable<MethodInfo> FindAllParsers() {
@@ -66,22 +66,8 @@ namespace Disunity.Disinfo.Services.Singleton {
                 return true; // Ignore other bots
             }
 
-//            if (!UserCanInteract(message, (SocketGuildUser) message.Author)) {
-//                return true;
-//            }
-
             return false;
         }
-
-//        private bool UserCanInteract(SocketUserMessage message, SocketGuildUser user) {
-//            var rolesEnv = _config["Roles"] ?? "Administrator";
-//            var validRoles = rolesEnv.Split(",").Select(o => o.ToLower()).ToList();
-//
-//            return user.Roles
-//                       .Select(r => r.Name)
-//                       .Select(role => role.ToLower())
-//                       .Any(lowercaseRole => validRoles.Contains(lowercaseRole));
-//        }
 
         private async Task<bool> CollectionHandler(IServiceProvider provider,
                                                    MethodInfo parser,
@@ -100,7 +86,7 @@ namespace Disunity.Disinfo.Services.Singleton {
 
             var parameters = parser.GetParameters();
 
-            if (match.Groups.Count - 1 != parameters.Length) {
+            if (match.Groups.Count != 0 && parameters.Length != 0 && match.Groups.Count - 1 != parameters.Length) {
                 return false;
             }
 
@@ -108,7 +94,10 @@ namespace Disunity.Disinfo.Services.Singleton {
 
             object[] args;
 
-            if (match.Groups.Count == 1) {
+            if (match.Groups.Count == 1 && parameters.Length == 0) {
+                args = new object[] { };
+            }
+            else if (match.Groups.Count == 1) {
                 args = new object[] {match.Groups[0].Value};
             } else {
                 var objects = match.Groups.Skip(1)
@@ -176,22 +165,28 @@ namespace Disunity.Disinfo.Services.Singleton {
                 contextService.Context = context;
                 contextService.Application = await _discord.GetApplicationInfoAsync();
                 
-                
                 await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
                 
                 if (msg.HasStringPrefix(_options.Prefix, ref argPos) ||
                     msg.HasMentionPrefix(_discord.CurrentUser, ref argPos)) {
                     var message = msg.Content.Substring(argPos);
 
-                    if (await ProcessParsers(provider, message)) {
-                        return;
-                    }
-
                     var result = await commandService.ExecuteAsync(context, argPos, _provider); // Execute the command
 
                     if (!result.IsSuccess) {
-                        await context.Channel.SendMessageAsync(result.ToString());
+                        if (await ProcessParsers(provider, message)) {
+                            return;
+                        }
                     }
+
+                    var replies = new [] {
+                        "Huh?", "What?", "Eh?", "Mmm?", 
+                        "Come again?", "Sorry?", "No idea what you're saying.",
+                        "That's not a command.",
+                        "Uh, try `!help`"
+                    };
+
+                    await context.Channel.SendMessageAsync(replies[_rng.Next(replies.Length)]);
                 }
                 
             }

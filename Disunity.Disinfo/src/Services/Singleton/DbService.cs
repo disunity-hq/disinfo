@@ -27,12 +27,26 @@ namespace Disunity.Disinfo.Services.Singleton {
             }
         }
 
+        public T WithDb<T>(Func<LiteDatabase, T> handler) {
+            using (var db = new LiteDatabase(_options.Path)) {
+                return handler(db);
+            }
+        }
+
         public void WithTable<T>(Action<LiteCollection<T>> handler) where T : ITable {
             WithDb(db => {
                 var name = typeof(T).Name;
                 var table = db.GetCollection<T>(name);
                 handler(table);
-                table.EnsureIndex(o => o.Id);
+            });
+        }
+
+        public TR WithTable<T, TR>(Func<LiteCollection<T>, TR> handler) where T : ITable {
+            return WithDb(db => {
+                var name = typeof(T).Name;
+                var table = db.GetCollection<T>(name);
+                var retVal = handler(table);
+                return retVal;
             });
         }
 
