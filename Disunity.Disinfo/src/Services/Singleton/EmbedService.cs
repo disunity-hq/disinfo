@@ -82,6 +82,10 @@ namespace Disunity.Disinfo.Services.Singleton {
             } else {
 
                 switch (property.ToLower()) {
+                    case "title":
+                        entry.Title = value;
+                        break;
+
                     case "description":
                         entry.Description = value;
                         break;

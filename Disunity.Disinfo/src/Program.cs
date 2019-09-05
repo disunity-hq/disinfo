@@ -48,12 +48,6 @@ namespace Disunity.Disinfo {
             BindingAttribute.ConfigureBindings(services);
             FactoryAttribute.ConfigureFactories(services);
 
-            var serviceNames = services.Where(d => d.ServiceType == typeof(ContextService));
-
-            foreach (var desc in serviceNames) {
-                Console.WriteLine($"{desc.ServiceType} => {desc.ImplementationType ?? desc.ImplementationFactory ?? desc.ImplementationInstance} as {desc.Lifetime}");
-            }
-
             services // bind third-party services (can't add binding attributes to classes we don't control)
                 .AddLogging(builder => builder.AddConsole())
                 .AddSingleton(configuration)

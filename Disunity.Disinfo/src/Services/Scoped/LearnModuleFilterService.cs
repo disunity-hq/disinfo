@@ -18,7 +18,7 @@ namespace Disunity.Disinfo.Services.Scoped {
         private readonly ContextService _contextService;
 
         private static readonly string[] _validFields = {
-            "description", "author", "color", "url", "image", "thumbnail", "locked"
+            "title", "description", "author", "color", "url", "image", "thumbnail", "locked"
         };
 
         public LearnModuleFilterService(EmbedService embeds, ContextService contextService) {

@@ -133,8 +133,6 @@ namespace Disunity.Disinfo.Services.Singleton {
             }
 
             if (parameters.Length == 1 && parameters[0].ParameterType == typeof(Match)) {
-                Console.WriteLine($"Handling message `{message}`");
-                Console.WriteLine($"With handler: {parser}");
                 if (await CollectionHandler(provider, parser, match)) {
                     return true;
                 }
@@ -146,7 +144,6 @@ namespace Disunity.Disinfo.Services.Singleton {
         private async Task<bool> ProcessParsers(IServiceProvider provider, string message) {
             foreach (var parser in _parsers) {
                 if (await ProcessParser(provider, parser, message)) {
-                    Console.WriteLine($"Command was handled by: {parser.Name}");
                     return true;
                 }
             }
@@ -155,8 +152,6 @@ namespace Disunity.Disinfo.Services.Singleton {
         }
 
         public async Task OnMessageReceivedAsync(SocketMessage s) {
-            _logger.LogInformation("Message received...");
-
             var msg = s as SocketUserMessage; // Ensure the message is from a user/bot
 
             if (msg == null) {

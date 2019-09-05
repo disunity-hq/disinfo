@@ -17,6 +17,8 @@ namespace Disunity.Disinfo.Models.Entities {
         public string Guild { get; set; }
 
         public string Slug { get; set; }
+        public string Title { get; set; }
+
         public string Description { get; set; }
 
         public string Author { get; set; }
@@ -55,7 +57,7 @@ namespace Disunity.Disinfo.Models.Entities {
         }
 
         public Embed AsEmbed() {
-            var builder = new EmbedBuilder().WithTitle(Slug)
+            var builder = new EmbedBuilder().WithTitle(Title ?? Slug)
                                             .WithDescription(Description)
                                             .WithAuthor(Author)
                                             .WithUrl(Url)
@@ -92,6 +94,7 @@ namespace Disunity.Disinfo.Models.Entities {
         }
 
         public bool IsEmpty =>
+            string.IsNullOrEmpty(Title) &&
             string.IsNullOrEmpty(Description) &&
             string.IsNullOrEmpty(Author) &&
             string.IsNullOrEmpty(Url) &&

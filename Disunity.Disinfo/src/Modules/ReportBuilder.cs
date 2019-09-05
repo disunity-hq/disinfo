@@ -102,35 +102,39 @@ namespace Disunity.Disinfo.Modules {
             return SingleRef()?.EmbedEntry?.AsEmbed();
         }
 
+        private string RefLabel(EmbedReference embedReference) {
+            return embedReference.Slug + (embedReference.Property == null ? "" : "." + embedReference.Property);
+        }
+
         private Embed ReportEmbed() {
             var fields = new List<EmbedFieldBuilder>();
 
             if (CreatedRefs?.Any() ?? false) {
-                fields.Add(ListField("I created", CreatedRefs.Select(r => r.Slug)));
+                fields.Add(ListField("I created", CreatedRefs.Select(RefLabel)));
             }
 
             if (DeletedRefs?.Any() ?? false) {
-                fields.Add(ListField("I deleted", DeletedRefs.Select(r => r.Slug)));
+                fields.Add(ListField("I deleted", DeletedRefs.Select(RefLabel)));
             }
 
             if (UpdatedRefs?.Any() ?? false) {
-                fields.Add(ListField("I updated", UpdatedRefs.Select(r => r.Slug)));
+                fields.Add(ListField("I updated", UpdatedRefs.Select(RefLabel)));
             }
 
             if (GlobalRefs?.Any() ?? false) {
-                fields.Add(ListField("These are global", GlobalRefs.Select(r => r.Slug)));
+                fields.Add(ListField("These are global", GlobalRefs.Select(RefLabel)));
             }
 
             if (LockedRefs?.Any() ?? false) {
-                fields.Add(ListField("These are locked", LockedRefs.Select(r => r.Slug)));
+                fields.Add(ListField("These are locked", LockedRefs.Select(RefLabel)));
             }
 
             if (MissingRefs?.Any() ?? false) {
-                fields.Add(ListField("These didn't exist", MissingRefs.Select(r => r.Input)));
+                fields.Add(ListField("These didn't exist", MissingRefs.Select(RefLabel)));
             }
 
             if (SkippedRefs?.Any() ?? false) {
-                fields.Add(ListField("I skipped these", SkippedRefs.Select(r => r.Input)));
+                fields.Add(ListField("I skipped these", SkippedRefs.Select(RefLabel)));
             }
 
             return new EmbedBuilder().WithFields(fields).Build();
