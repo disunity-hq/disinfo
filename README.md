@@ -2,13 +2,17 @@
 
 <h3 align="center">A Discord bot for storing and retrieving pre-defined messages.<h3>
 <p align="center">
-  <img style="border-radius: 50px" width="256" height="256" src="./logo.png">
+  <img style="border-radius: 50px" width="256" height="256" src="./docs/imgs/logo.png">
+</p>
+
+<p align="center">
+<a href="https://github.com/disunity-hq/disinfo/blob/master/docs/USERGUIDE.md">User Guide</a>
 </p>
 
 ## Overview
 
 <p align="center">
-  <img src="./example.png">
+  <img src="./docs/imgs/example.png">
 </p>
 
 Discord has a feature where bots are able to send a special kind of message not available to normal users. These are called "embeds". 
