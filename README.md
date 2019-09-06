@@ -6,7 +6,9 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/disunity-hq/disinfo/blob/master/docs/USERGUIDE.md">User Guide</a>
+<a href="https://github.com/disunity-hq/disinfo/blob/master/docs/USERGUIDE.md">User Guide</a> 
+/
+<a href="https://github.com/disunity-hq/disinfo/blob/master/docs/QUICKREF.md">Quick Reference</a>
 </p>
 
 ## Overview
