@@ -1,5 +1,9 @@
 # Quick Reference
 
+## Lookup an Entry
+
+    !<keyword>
+
 ## Simple Entries
 
     !<keyword> = <description text>
