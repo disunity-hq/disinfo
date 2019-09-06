@@ -9,9 +9,8 @@ services:
     restart: always
     environment:
       Discord__Token: ${DiscordToken}
-      Db__Path: "/db"
+      Db__Path: "/db/disinfo.db"
     volumes:
       - type: bind
         source: ${DbPath:-./dbs}
         target: /db
-    
