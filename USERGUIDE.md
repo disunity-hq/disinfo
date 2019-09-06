@@ -46,7 +46,7 @@ Entry content is comprised of a number of properties:
 
 <hr style="opacity: 0">
 <p align="center">
-  <img src="./example.png">
+  <img src="./template.png">
 </p>
 
 
