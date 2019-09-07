@@ -8,9 +8,12 @@ services:
       dockerfile: ./Dockerfile
     restart: always
     environment:
-      Discord__Token: ${DiscordToken}
-      Db__Path: "/db/disinfo.db"
+      Discord__Token: ${Discord__Token}
+      Db__Path: ${Db__Path:-/tmp/lite/disinfo.db}
     volumes:
       - type: bind
-        source: ${DbPath:-./dbs}
-        target: /db
+        source: ./lite/
+        target: /tmp/lite/
+      - type: bind
+        source: ./sql/
+        target: /tmp/sql/

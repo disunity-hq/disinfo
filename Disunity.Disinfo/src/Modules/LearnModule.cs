@@ -10,9 +10,12 @@ using Discord;
 using Discord.Commands;
 
 using Disunity.Disinfo.Attributes;
+using Disunity.Disinfo.Data;
 using Disunity.Disinfo.Services;
 using Disunity.Disinfo.Services.Scoped;
 using Disunity.Disinfo.Services.Singleton;
+
+using EmbedDB.Entities;
 
 using Newtonsoft.Json;
 
@@ -28,15 +31,18 @@ namespace Disunity.Disinfo.Modules {
         private readonly EmbedService _embeds;
         private readonly LearnModuleService _learnService;
         private readonly ClientService _clientService;
+        private readonly DisinfoDbContext _dbContext;
 
         public LearnModule(ContextService contextService,
                            EmbedService embeds,
                            LearnModuleService learnService, 
-                           ClientService clientService) {
+                           ClientService clientService,
+                           DisinfoDbContext dbContext) {
             _contextService = contextService;
             _embeds = embeds;
             _learnService = learnService;
             _clientService = clientService;
+            _dbContext = dbContext;
         }
 
         public Task ReplyAsync(string message = null, Embed embed = null) {
@@ -202,7 +208,7 @@ namespace Disunity.Disinfo.Modules {
             return true;
         }
 
-        [Parser(@"(.*?)\s+?(?:is|=)\s+?```(.*?)\n(.*)```")]
+        [Parser(@"(.*?)\s+?(?:=)\s+?```(.*?)\n(.*)```")]
         public async Task<bool> ParserLearnEmbed(string input, string format, string data) {
             if (!await CheckAccess(input)) return true;
 
@@ -221,12 +227,12 @@ namespace Disunity.Disinfo.Modules {
 
         }
 
-        [Parser(@"(.*?)\s+?(?:is|=)\s+?\n(.*)")]
+        [Parser(@"(.*?)\s+?(?:=)\s+?\n(.*)")]
         public async Task<bool> ParserLearnEmbedUnquoted(string input, string yaml) {
             return await LearnYaml(input, yaml);
         }
 
-        [Parser(@"(?:(?:,\s*)*([^,]+)\s+?(?:is|=)\s+?([^,]+))+")]
+        [Parser(@"(?:(?:,\s*)*([^,]+)\s+?(?:=)\s+?([^,]+))+")]
         public async Task<bool> ParserPropUpdate(Match match) {
             try {
                 var reply = _learnService.UpdateMatches(match).Build();
@@ -241,6 +247,17 @@ namespace Disunity.Disinfo.Modules {
 
         [Parser(@"(.*)")]
         public async Task<bool> GlobalLookup(string input) {
+            
+
+            Console.WriteLine("SAVING EMBED ENTRY");
+            var entity = new EmbedEntity();
+            entity.GuildId = 0;
+            entity.Slug = "disinfo";
+            entity.Description = "Hello World";
+            entity.Title = "Disinfo";
+            _dbContext.SaveChanges();
+
+            
             var entry = _learnService.Lookup(input);
 
             if (entry != null) {

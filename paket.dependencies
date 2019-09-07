@@ -2,6 +2,9 @@ source https://api.nuget.org/v3/index.json
 
 # core dependencies
 nuget Discord.Net >= 2.1.1
+nuget Microsoft.EntityFrameworkCore >= 2.2.6
+# nuget Microsoft.EntityFrameworkCore.Sqlite >= 2.2.6
+nuget Microsoft.EntityFrameworkCore.Design >= 2.2.6
 nuget Microsoft.Extensions.Logging >= 2.2.0
 nuget Microsoft.Extensions.Logging.Console >= 2.2.0
 nuget Microsoft.Extensions.Configuration >= 2.2.0
@@ -15,6 +18,8 @@ nuget xunit" >= 2.4.0
 nuget xunit.runner.visualstudio" >= 2.4.0
 nuget Xunit.DependencyInjection >= 5.4.0
 nuget Moq >= 4.12.0
+nuget Newtonsoft.Json >= 12.0.2
+
 
 
 git https://github.com/dustinlacewell/BindingAttributes.git master build: "build.sh", OS: mono, Packages: /BindingAttributes/nupkg

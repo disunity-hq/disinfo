@@ -15,14 +15,18 @@ WORKDIR /app
 COPY .paket/ ./.paket/
 COPY paket.dependencies ./
 COPY paket.lock ./
+COPY EmbedDB/EmbedDB.csproj ./EmbedDB/
+COPY EmbedDB/paket.references ./EmbedDB/
 COPY Disunity.Disinfo/Disunity.Disinfo.csproj ./Disunity.Disinfo/
 COPY Disunity.Disinfo/paket.references ./Disunity.Disinfo/
 RUN mono .paket/paket.exe install
 
 # copy everything else and build app
+COPY EmbedDB ./EmbedDB/
 COPY Disunity.Disinfo ./Disunity.Disinfo/
 WORKDIR /app/Disunity.Disinfo
 RUN dotnet publish -p:SolutionDir=$(pwd) -c Release -o out Disunity.Disinfo.csproj
+RUN dotnet ef database update
 
 
 ##

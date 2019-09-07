@@ -1,0 +1,6 @@
+Microsoft.EntityFrameworkCore
+# Microsoft.EntityFrameworkCore.Sqlite
+
+SharpYaml
+Newtonsoft.Json
+Slugify.Core

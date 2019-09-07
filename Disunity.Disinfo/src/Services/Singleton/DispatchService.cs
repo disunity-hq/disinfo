@@ -11,7 +11,10 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 using Disunity.Disinfo.Attributes;
+using Disunity.Disinfo.Data;
 using Disunity.Disinfo.Options;
+
+using EmbedDB.Entities;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -164,6 +167,7 @@ namespace Disunity.Disinfo.Services.Singleton {
                 var contextService = provider.GetRequiredService<ContextService>();
                 contextService.Context = context;
                 contextService.Application = await _discord.GetApplicationInfoAsync();
+                
                 
                 await commandService.AddModulesAsync(Assembly.GetEntryAssembly(), provider);
                 

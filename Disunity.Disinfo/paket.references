@@ -8,5 +8,8 @@ LiteDB
 Slugify.Core
 SharpYaml
 
+Microsoft.EntityFrameworkCore
+# Microsoft.EntityFrameworkCore.Sqlite
+Microsoft.EntityFrameworkCore.Design
 
 BindingAttributes
