@@ -26,7 +26,6 @@ COPY EmbedDB ./EmbedDB/
 COPY Disunity.Disinfo ./Disunity.Disinfo/
 WORKDIR /app/Disunity.Disinfo
 RUN dotnet publish -p:SolutionDir=$(pwd) -c Release -o out Disunity.Disinfo.csproj
-RUN dotnet ef database update
 
 
 ##

@@ -5,8 +5,6 @@ using BindingAttributes;
 using Discord;
 using Discord.Commands;
 
-using Disunity.Disinfo.Data;
-
 
 namespace Disunity.Disinfo.Services {
 
@@ -24,9 +22,6 @@ namespace Disunity.Disinfo.Services {
         public bool IsManagement => IsOwner && IsDM;
 
         public string Guild => IsManagement ? "0" : Context.Guild.Id.ToString();
-        
-        public DisinfoDbContext Db { get; set; }
-
         
         private int RolePosition(ulong id) {
             return Context.Guild.GetRole(id).Position;

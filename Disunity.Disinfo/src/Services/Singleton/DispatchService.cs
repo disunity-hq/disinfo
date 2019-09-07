@@ -11,10 +11,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 using Disunity.Disinfo.Attributes;
-using Disunity.Disinfo.Data;
 using Disunity.Disinfo.Options;
-
-using EmbedDB.Entities;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

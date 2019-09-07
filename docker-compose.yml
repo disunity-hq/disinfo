@@ -10,6 +10,7 @@ services:
     environment:
       Discord__Token: ${Discord__Token}
       Db__Path: ${Db__Path:-/tmp/lite/disinfo.db}
+      Db__Filename: ${Db__Filename:-/tmp/sql/disinfo.db}
     volumes:
       - type: bind
         source: ./lite/

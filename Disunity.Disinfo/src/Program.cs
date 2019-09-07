@@ -6,12 +6,10 @@ using BindingAttributes;
 
 using Discord.Commands;
 
-using Disunity.Disinfo.Data;
 using Disunity.Disinfo.Interfaces;
 
 using EmbedDB.Data;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -57,7 +55,7 @@ namespace Disunity.Disinfo {
                 .AddSingleton<ISlugHelper, SlugHelper>()
                 .AddSingleton<CommandService>();
             
-            services.AddDbContext<DisinfoDbContext>();
+            services.AddDbContext<EmbedDBContext>();
         }
 
         private static async Task Boot(IServiceProvider provider) {

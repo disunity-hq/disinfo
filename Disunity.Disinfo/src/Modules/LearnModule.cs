@@ -10,11 +10,11 @@ using Discord;
 using Discord.Commands;
 
 using Disunity.Disinfo.Attributes;
-using Disunity.Disinfo.Data;
 using Disunity.Disinfo.Services;
 using Disunity.Disinfo.Services.Scoped;
 using Disunity.Disinfo.Services.Singleton;
 
+using EmbedDB.Data;
 using EmbedDB.Entities;
 
 using Newtonsoft.Json;
@@ -31,13 +31,13 @@ namespace Disunity.Disinfo.Modules {
         private readonly EmbedService _embeds;
         private readonly LearnModuleService _learnService;
         private readonly ClientService _clientService;
-        private readonly DisinfoDbContext _dbContext;
+        private readonly EmbedDBContext _dbContext;
 
         public LearnModule(ContextService contextService,
                            EmbedService embeds,
                            LearnModuleService learnService, 
                            ClientService clientService,
-                           DisinfoDbContext dbContext) {
+                           EmbedDBContext dbContext) {
             _contextService = contextService;
             _embeds = embeds;
             _learnService = learnService;
